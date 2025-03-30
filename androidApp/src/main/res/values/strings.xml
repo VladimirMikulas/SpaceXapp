@@ -1,0 +1,35 @@
+<resources>
+    <string name="app_name">SpaceXApp</string>
+    <string name="back">Back</string>
+    <string name="dashboard">Dashboard</string>
+
+
+    <!-- Generic -->
+    <string name="api_error">Error from API.</string>
+
+    <!-- List Screen -->
+    <string name="rockets">Rockets</string>
+    <string name="label_first_flight">First flight: </string>
+
+    <!-- Rocket details Screen -->
+    <string name="launch">Launch</string>
+    <string name="overview">Overview</string>
+    <string name="parameters">Parameters</string>
+    <string name="first_stage">First Stage</string>
+    <string name="second_stage">Second Stage</string>
+    <string name="height">height</string>
+    <string name="meters">m</string>
+    <string name="diameter">diameter</string>
+    <string name="mass">mass</string>
+    <string name="tons">t</string>
+    <string name="reusable">reusable</string>
+    <string name="not_reusable">not reusable</string>
+    <string name="engines">engines</string>
+    <string name="tons_of_fuel">tons of fuel</string>
+    <string name="seconds_burn_time">seconds burn time</string>
+    <string name="rocket_image">Rocket image</string>
+
+    <!-- Rocket launch Screen -->
+    <string name="rocket_idle_message">Move your phone up to launch the rocket</string>
+    <string name="rocket_launch_message">Launch successful!</string>
+</resources>
