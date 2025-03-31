@@ -4,7 +4,7 @@ import android.app.Application
 import android.content.Context
 import androidx.test.runner.AndroidJUnitRunner
 import com.vlamik.core.commons.Log.addLogger
-import com.vlamik.spacex.utils.AndroidLogger
+import com.vlamik.spacex.core.utils.AndroidLogger
 import dagger.hilt.android.testing.HiltTestApplication
 
 class TestRunner : AndroidJUnitRunner() {

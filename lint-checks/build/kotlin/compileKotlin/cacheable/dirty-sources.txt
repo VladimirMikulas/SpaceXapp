@@ -1,0 +1,2 @@
+C:\Users\vladi\AndroidStudioProjects\NbaApp\lint-checks\src\main\java\com\vlamik\nba\lintchecks\LintRegistry.kt
+C:\Users\vladi\AndroidStudioProjects\NbaApp\lint-checks\src\main\java\com\vlamik\nba\lintchecks\MissingExcludePreviewAnnotationDetector.kt
