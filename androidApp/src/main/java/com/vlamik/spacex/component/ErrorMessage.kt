@@ -18,10 +18,11 @@ import com.vlamik.spacex.R
 
 @Composable
 fun ErrorMessage(
-    errorMessage: String
+    errorMessage: String,
+    modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,

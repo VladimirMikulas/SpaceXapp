@@ -31,12 +31,14 @@ import com.vlamik.spacex.theme.SoftGray
 @Composable
 fun SpaceXAppBar(
     title: String,
+    modifier: Modifier = Modifier,
     backButtonClickAction: () -> Unit = {},
     backButtonText: String = stringResource(id = R.string.back),
     addLaunchButton: Boolean = false,
-    launchButtonClickAction: (String) -> Unit = {},
+    launchButtonClickAction: (String) -> Unit = {}
 ) {
     Surface(
+        modifier = modifier,
         shadowElevation = 4.dp,
         color = SoftGray
     ) {

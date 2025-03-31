@@ -28,11 +28,13 @@ import com.vlamik.spacex.theme.SoftGray
 @Composable
 fun SectionAppBar(
     title: String,
-    menuButtonClickAction: () -> Unit = {},
+    modifier: Modifier = Modifier,
+    menuButtonClickAction: () -> Unit = {}
 ) {
     Surface(
         shadowElevation = 4.dp,
-        color = SoftGray
+        color = SoftGray,
+        modifier = modifier
     ) {
         TopAppBar(
             title = {
