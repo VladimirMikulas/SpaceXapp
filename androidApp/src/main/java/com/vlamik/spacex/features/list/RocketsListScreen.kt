@@ -4,8 +4,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,6 +15,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -34,17 +38,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.vlamik.core.domain.models.RocketListItemModel
 import com.vlamik.spacex.R
-import com.vlamik.spacex.component.ErrorMessage
-import com.vlamik.spacex.component.appbars.SectionAppBar
-import com.vlamik.spacex.features.list.RocketsListViewModel.ListScreenUiState
-import com.vlamik.spacex.features.list.RocketsListViewModel.ListScreenUiState.ErrorFromAPI
-import com.vlamik.spacex.features.list.RocketsListViewModel.ListScreenUiState.LoadingFromAPI
+import com.vlamik.spacex.component.appbars.SearchAppBar
+import com.vlamik.spacex.component.appbars.models.FilterParameter
+import com.vlamik.spacex.component.appbars.models.FilterState
+import com.vlamik.spacex.core.filtering.FilterItem
+import com.vlamik.spacex.core.utils.preview.DeviceFormatPreview
+import com.vlamik.spacex.core.utils.preview.FontScalePreview
+import com.vlamik.spacex.core.utils.preview.ThemeModePreview
+import com.vlamik.spacex.features.list.RocketsListViewModel.ListScreenUiState.DataError
+import com.vlamik.spacex.features.list.RocketsListViewModel.ListScreenUiState.LoadingData
 import com.vlamik.spacex.features.list.RocketsListViewModel.ListScreenUiState.UpdateSuccess
 import com.vlamik.spacex.theme.SoftGray
 import com.vlamik.spacex.theme.TemplateTheme
-import com.vlamik.spacex.utils.preview.DeviceFormatPreview
-import com.vlamik.spacex.utils.preview.FontScalePreview
-import com.vlamik.spacex.utils.preview.ThemeModePreview
 
 
 @Composable
@@ -53,71 +58,161 @@ fun RocketsListScreen(
     openDetailsClicked: (String) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val activeFilters by viewModel.activeFilters.collectAsState()
+    val availableFilters by viewModel.availableFilters.collectAsState()
 
-    RocketsListComposable(
+    RocketsListContent(
         state = state,
+        searchQuery = searchQuery,
+        activeFilters = activeFilters,
+        availableFilters = availableFilters,
         onDetailsClicked = openDetailsClicked,
-        onRefresh = viewModel::refresh
+        onRefresh = viewModel::refresh,
+        onSearchTextChange = viewModel::updateSearchQuery,
+        onFilterSelected = viewModel::updateFilters
     )
 }
 
 @Composable
-private fun RocketsListComposable(
-    state: ListScreenUiState,
+private fun RocketsListContent(
+    state: RocketsListViewModel.ListScreenUiState,
+    searchQuery: String,
+    activeFilters: FilterState,
+    availableFilters: List<FilterItem>,
     onDetailsClicked: (String) -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onSearchTextChange: (String) -> Unit,
+    onFilterSelected: (FilterState) -> Unit
 ) {
+    val filterParameters = availableFilters.map { filterItem ->
+        FilterParameter(
+            key = filterItem.key,
+            displayName = filterItem.displayName,
+            values = filterItem.values
+        )
+    }
+
     Scaffold(
-        topBar = { SectionAppBar(title = stringResource(id = R.string.rockets)) }
+        topBar = {
+            SearchAppBar(
+                title = stringResource(R.string.rockets),
+                searchText = searchQuery,
+                activeFilters = activeFilters,
+                filters = filterParameters,
+                onSearchTextChange = onSearchTextChange,
+                onFilterSelected = onFilterSelected,
+                onMenuClick = {
+                    // TODO: Handle menu click if needed
+                }
+            )
+        }
     ) { paddingValues ->
         Surface(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
+            color = MaterialTheme.colorScheme.background
         ) {
             PullToRefreshBox(
-                isRefreshing = state is LoadingFromAPI,
+                isRefreshing = state is LoadingData,
                 onRefresh = onRefresh
             ) {
                 when (state) {
-                    is LoadingFromAPI -> {
+                    is LoadingData -> {
                     }
 
-                    is UpdateSuccess -> {
-                        Surface(
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp)),
-                            color = SoftGray
-                        ) {
-                            LazyColumn(
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            ) {
-                                itemsIndexed(state.rockets) { index, rocket ->
-                                    RocketsListItem(
-                                        rocket = rocket,
-                                        onDetailsClicked = onDetailsClicked
-                                    )
-                                    if (index < state.rockets.lastIndex) {
-                                        HorizontalDivider(
-                                            color = MaterialTheme.colorScheme.background,
-                                            thickness = 2.dp,
-                                            modifier = Modifier.padding(start = 16.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    is UpdateSuccess -> RocketListContent(
+                        rockets = state.filteredRockets,
+                        onDetailsClicked = onDetailsClicked
+                    )
 
-                    is ErrorFromAPI -> {
-                        ErrorMessage(errorMessage = stringResource(id = R.string.api_error))
+                    is DataError -> ErrorState(onRetry = onRefresh)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ErrorState(onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = stringResource(R.string.data_error),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.error
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = onRetry) {
+            Text(text = stringResource(R.string.retry))
+        }
+    }
+}
+
+@Composable
+private fun RocketListContent(
+    rockets: List<RocketListItemModel>,
+    onDetailsClicked: (String) -> Unit
+) {
+    if (rockets.isEmpty()) {
+        EmptyState()
+    } else {
+        Surface(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp)),
+            color = SoftGray
+        ) {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(vertical = 8.dp)
+            ) {
+                itemsIndexed(rockets) { index, rocket ->
+                    RocketsListItem(
+                        rocket = rocket,
+                        onDetailsClicked = onDetailsClicked
+                    )
+                    if (index < rockets.lastIndex) {
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.background,
+                            thickness = 2.dp,
+                            modifier = Modifier.padding(start = 16.dp)
+                        )
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun EmptyState() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = Icons.Default.SearchOff,
+            contentDescription = null,
+            modifier = Modifier.size(48.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.no_rockets_found),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -177,18 +272,131 @@ private fun RocketInfo(rocket: RocketListItemModel, modifier: Modifier) {
 @Composable
 private fun RocketsListScreenPreview() {
     TemplateTheme {
-        RocketsListComposable(
+        RocketsListContent(
             state = UpdateSuccess(
-                rockets = (1..10).map {
+                rockets = listOf(
                     RocketListItemModel(
-                        "5e9d0d95eda69974db09d1ed",
-                        "Falcon Heavy",
-                        "6.2.2018",
+                        id = "1",
+                        name = "Falcon 9",
+                        firstFlight = "2010-06-04",
+                        height = 70.0,
+                        diameter = 3.7,
+                        mass = 549054
+                    ),
+                    RocketListItemModel(
+                        id = "2",
+                        name = "Falcon Heavy",
+                        firstFlight = "2018-02-06",
+                        height = 70.0,
+                        diameter = 12.2,
+                        mass = 1420788
+                    ),
+                    RocketListItemModel(
+                        id = "3",
+                        name = "Starship",
+                        firstFlight = "2023-04-20",
+                        height = 120.0,
+                        diameter = 9.0,
+                        mass = 5000000
                     )
-                },
-
                 ),
+                filteredRockets = listOf(
+                    RocketListItemModel(
+                        id = "1",
+                        name = "Falcon 9",
+                        firstFlight = "2010-06-04",
+                        height = 70.0,
+                        diameter = 3.7,
+                        mass = 549054
+                    ),
+                    RocketListItemModel(
+                        id = "2",
+                        name = "Falcon Heavy",
+                        firstFlight = "2018-02-06",
+                        height = 70.0,
+                        diameter = 12.2,
+                        mass = 1420788
+                    )
+                )
+            ),
+            searchQuery = "",
+            activeFilters = FilterState(),
+            availableFilters = listOf(
+                FilterItem(
+                    key = "name",
+                    displayName = "Name",
+                    values = listOf("Falcon 9", "Falcon Heavy", "Starship")
+                ),
+                FilterItem(
+                    key = "first_flight",
+                    displayName = "First Flight",
+                    values = listOf("Before 2015", "2015-2020", "After 2020")
+                )
+            ),
             onDetailsClicked = {},
-            onRefresh = {})
+            onRefresh = {},
+            onSearchTextChange = {},
+            onFilterSelected = {}
+        )
+    }
+}
+
+@ThemeModePreview
+@FontScalePreview
+@DeviceFormatPreview
+@Composable
+private fun LoadingStatePreview() {
+    TemplateTheme {
+        RocketsListContent(
+            state = LoadingData,
+            searchQuery = "",
+            activeFilters = FilterState(),
+            availableFilters = emptyList(),
+            onDetailsClicked = {},
+            onRefresh = {},
+            onSearchTextChange = {},
+            onFilterSelected = {}
+        )
+    }
+}
+
+@ThemeModePreview
+@FontScalePreview
+@DeviceFormatPreview
+@Composable
+private fun ErrorStatePreview() {
+    TemplateTheme {
+        RocketsListContent(
+            state = DataError,
+            searchQuery = "",
+            activeFilters = FilterState(),
+            availableFilters = emptyList(),
+            onDetailsClicked = {},
+            onRefresh = {},
+            onSearchTextChange = {},
+            onFilterSelected = {}
+        )
+    }
+}
+
+@ThemeModePreview
+@FontScalePreview
+@DeviceFormatPreview
+@Composable
+private fun EmptyStatePreview() {
+    TemplateTheme {
+        RocketsListContent(
+            state = UpdateSuccess(
+                rockets = emptyList(),
+                filteredRockets = emptyList()
+            ),
+            searchQuery = "Non-existent rocket",
+            activeFilters = FilterState(),
+            availableFilters = emptyList(),
+            onDetailsClicked = {},
+            onRefresh = {},
+            onSearchTextChange = {},
+            onFilterSelected = {}
+        )
     }
 }

@@ -1,4 +1,4 @@
-package com.vlamik.spacex.utils.preview
+package com.vlamik.spacex.core.utils.preview
 
 import androidx.compose.ui.tooling.preview.Preview
 

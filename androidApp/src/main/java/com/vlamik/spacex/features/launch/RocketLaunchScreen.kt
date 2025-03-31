@@ -29,11 +29,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.vlamik.spacex.R
 import com.vlamik.spacex.component.appbars.SpaceXAppBar
+import com.vlamik.spacex.core.utils.preview.DeviceFormatPreview
+import com.vlamik.spacex.core.utils.preview.FontScalePreview
+import com.vlamik.spacex.core.utils.preview.ThemeModePreview
 import com.vlamik.spacex.features.launch.RocketLaunchViewModel.LaunchRocketState
 import com.vlamik.spacex.theme.TemplateTheme
-import com.vlamik.spacex.utils.preview.DeviceFormatPreview
-import com.vlamik.spacex.utils.preview.FontScalePreview
-import com.vlamik.spacex.utils.preview.ThemeModePreview
 
 @Composable
 fun RocketLaunchScreen(

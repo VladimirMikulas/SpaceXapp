@@ -36,12 +36,12 @@ import com.vlamik.spacex.R
 import com.vlamik.spacex.component.ErrorMessage
 import com.vlamik.spacex.component.LoadingIndicator
 import com.vlamik.spacex.component.appbars.SpaceXAppBar
+import com.vlamik.spacex.core.utils.preview.DeviceFormatPreview
+import com.vlamik.spacex.core.utils.preview.FontScalePreview
+import com.vlamik.spacex.core.utils.preview.ThemeModePreview
 import com.vlamik.spacex.theme.PinkShade
 import com.vlamik.spacex.theme.SoftGray
 import com.vlamik.spacex.theme.TemplateTheme
-import com.vlamik.spacex.utils.preview.DeviceFormatPreview
-import com.vlamik.spacex.utils.preview.FontScalePreview
-import com.vlamik.spacex.utils.preview.ThemeModePreview
 
 @Composable
 fun RocketDetailScreen(
@@ -52,7 +52,7 @@ fun RocketDetailScreen(
     val rocketDetailState by detailsViewModel.updateState.collectAsState()
 
     when (val state = rocketDetailState) {
-        RocketDetailViewModel.UiState.ErrorFromAPI -> ErrorMessage(errorMessage = stringResource(id = R.string.api_error))
+        RocketDetailViewModel.UiState.ErrorFromAPI -> ErrorMessage(errorMessage = stringResource(id = R.string.data_error))
         RocketDetailViewModel.UiState.LoadingFromAPI -> LoadingIndicator()
         is RocketDetailViewModel.UiState.Success -> {
             RocketDetailComposable(
@@ -124,7 +124,7 @@ private fun RocketDetailComposable(
                         stringResource(id = R.string.diameter)
                     )
                     ParameterCard(
-                        "${rocketDetail.mass}${stringResource(id = R.string.tons)}",
+                        "${rocketDetail.mass}${stringResource(id = R.string.kilograms)}",
                         stringResource(id = R.string.mass)
                     )
                 }
@@ -246,7 +246,7 @@ private fun RocketDetailPreview() {
                     description = "With the ability to lift into orbit over 54 metric tons (119,000 lb)--a mass equivalent to a 737 jetliner loaded with passengers, crew, luggage and fuel--Falcon Heavy can lift more than twice the payload of the next closest operational vehicle, the Delta IV Heavy, at one-third the cost.",
                     height = 70.0,
                     diameter = 12.2,
-                    mass = 1420788.0,
+                    mass = 1420788,
                     firstStage = StageDetailModel(
                         reusable = true,
                         engines = 27,

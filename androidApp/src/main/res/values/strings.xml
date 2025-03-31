@@ -1,15 +1,41 @@
 <resources>
     <string name="app_name">SpaceXApp</string>
     <string name="back">Back</string>
+    <string name="home">Home</string>
     <string name="dashboard">Dashboard</string>
 
 
     <!-- Generic -->
-    <string name="api_error">Error from API.</string>
+    <string name="data_error">Error when retrieving data.</string>
 
     <!-- List Screen -->
     <string name="rockets">Rockets</string>
     <string name="label_first_flight">First flight: </string>
+    <string name="no_rockets_found">No rockets found</string>
+    <string name="retry">Retry</string>
+
+    <!-- Search App Bar -->
+    <string name="clear">Clear</string>
+    <string name="menu">Menu</string>
+    <string name="search">Search</string>
+
+    <!-- Filter Labels -->
+    <string name="filter_name">Name</string>
+    <string name="filter_first_flight">First Flight</string>
+    <string name="filter_height">Height (m)</string>
+    <string name="filter_diameter">Diameter (m)</string>
+    <string name="filter_mass">Mass (kg)</string>
+    <!-- Units -->
+    <string name="unit_meters">m</string>
+    <string name="unit_kilograms">kg</string>
+    <string name="unit_year">year</string>
+    <!-- Range Labels -->
+    <string name="filter_before">Before %s</string>
+    <string name="filter_after">After %s</string>
+    <string name="filter_under">Under %s</string>
+    <string name="filter_over">Over %s</string>
+    <string name="filter_range">%1$s - %2$s</string>
+    <string name="filter_range_separator"> - </string>
 
     <!-- Rocket details Screen -->
     <string name="launch">Launch</string>
@@ -21,7 +47,7 @@
     <string name="meters">m</string>
     <string name="diameter">diameter</string>
     <string name="mass">mass</string>
-    <string name="tons">t</string>
+    <string name="kilograms">kg</string>
     <string name="reusable">reusable</string>
     <string name="not_reusable">not reusable</string>
     <string name="engines">engines</string>
@@ -32,4 +58,5 @@
     <!-- Rocket launch Screen -->
     <string name="rocket_idle_message">Move your phone up to launch the rocket</string>
     <string name="rocket_launch_message">Launch successful!</string>
+    <string name="search_rockets_placeholder">Search in Rockets…</string>
 </resources>

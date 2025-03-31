@@ -3,7 +3,7 @@ package com.vlamik.spacex
 import android.app.Application
 import android.os.StrictMode
 import com.vlamik.core.commons.Log.addLogger
-import com.vlamik.spacex.utils.AndroidLogger
+import com.vlamik.spacex.core.utils.AndroidLogger
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
