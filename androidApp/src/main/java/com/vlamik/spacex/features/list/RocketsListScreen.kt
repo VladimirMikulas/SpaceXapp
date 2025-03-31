@@ -17,6 +17,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.DrawerState
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -24,9 +26,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,6 +45,7 @@ import com.vlamik.spacex.R
 import com.vlamik.spacex.component.appbars.SearchAppBar
 import com.vlamik.spacex.component.appbars.models.FilterParameter
 import com.vlamik.spacex.component.appbars.models.FilterState
+import com.vlamik.spacex.component.drawer.AppDrawer
 import com.vlamik.spacex.core.filtering.FilterItem
 import com.vlamik.spacex.core.utils.preview.DeviceFormatPreview
 import com.vlamik.spacex.core.utils.preview.FontScalePreview
@@ -48,22 +53,33 @@ import com.vlamik.spacex.core.utils.preview.ThemeModePreview
 import com.vlamik.spacex.features.list.RocketsListViewModel.ListScreenUiState.DataError
 import com.vlamik.spacex.features.list.RocketsListViewModel.ListScreenUiState.LoadingData
 import com.vlamik.spacex.features.list.RocketsListViewModel.ListScreenUiState.UpdateSuccess
+import com.vlamik.spacex.navigation.NavRoutes
 import com.vlamik.spacex.theme.SoftGray
 import com.vlamik.spacex.theme.TemplateTheme
+import kotlinx.coroutines.launch
 
 
 @Composable
 fun RocketsListScreen(
     viewModel: RocketsListViewModel,
-    openDetailsClicked: (String) -> Unit
+    openDetailsClicked: (String) -> Unit,
+    navigateTo: (NavRoutes) -> Unit,
+    currentRoute: NavRoutes = NavRoutes.RocketsList
 ) {
     val state by viewModel.state.collectAsState()
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
     val searchQuery by viewModel.searchQuery.collectAsState()
     val activeFilters by viewModel.activeFilters.collectAsState()
     val availableFilters by viewModel.availableFilters.collectAsState()
 
+    AppDrawer(
+        currentRoute = currentRoute,
+        onItemSelected = navigateTo,
+        drawerState = drawerState
+    ) {
     RocketsListContent(
         state = state,
+        drawerState = drawerState,
         searchQuery = searchQuery,
         activeFilters = activeFilters,
         availableFilters = availableFilters,
@@ -72,11 +88,13 @@ fun RocketsListScreen(
         onSearchTextChange = viewModel::updateSearchQuery,
         onFilterSelected = viewModel::updateFilters
     )
+    }
 }
 
 @Composable
 private fun RocketsListContent(
     state: RocketsListViewModel.ListScreenUiState,
+    drawerState: DrawerState,
     searchQuery: String,
     activeFilters: FilterState,
     availableFilters: List<FilterItem>,
@@ -92,6 +110,7 @@ private fun RocketsListContent(
             values = filterItem.values
         )
     }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -103,7 +122,7 @@ private fun RocketsListContent(
                 onSearchTextChange = onSearchTextChange,
                 onFilterSelected = onFilterSelected,
                 onMenuClick = {
-                    // TODO: Handle menu click if needed
+                    scope.launch { drawerState.open() }
                 }
             )
         }
@@ -319,6 +338,7 @@ private fun RocketsListScreenPreview() {
                     )
                 )
             ),
+            drawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
             searchQuery = "",
             activeFilters = FilterState(),
             availableFilters = listOf(
@@ -349,6 +369,7 @@ private fun LoadingStatePreview() {
     TemplateTheme {
         RocketsListContent(
             state = LoadingData,
+            drawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
             searchQuery = "",
             activeFilters = FilterState(),
             availableFilters = emptyList(),
@@ -368,6 +389,7 @@ private fun ErrorStatePreview() {
     TemplateTheme {
         RocketsListContent(
             state = DataError,
+            drawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
             searchQuery = "",
             activeFilters = FilterState(),
             availableFilters = emptyList(),
@@ -390,6 +412,7 @@ private fun EmptyStatePreview() {
                 rockets = emptyList(),
                 filteredRockets = emptyList()
             ),
+            drawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
             searchQuery = "Non-existent rocket",
             activeFilters = FilterState(),
             availableFilters = emptyList(),

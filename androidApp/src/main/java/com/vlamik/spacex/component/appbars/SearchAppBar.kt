@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -125,7 +126,7 @@ private fun SearchModeContent(
             TextField(
                 value = searchText,
                 onValueChange = onTextChange,
-                placeholder = { Text(stringResource(R.string.search_rockets_placeholder)) },
+                placeholder = { Text(stringResource(R.string.search_items_placeholder)) },
                 modifier = Modifier
                     .weight(1f)
                     .focusRequester(focusRequester),
@@ -151,19 +152,23 @@ private fun SearchModeContent(
             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
         )
 
-        // Filters Section
-        LazyColumn(modifier = Modifier.padding(16.dp)) {
+        val maxFilterHeight = 160.dp
+        LazyColumn(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+                .heightIn(max = maxFilterHeight)
+        ) {
             filters.forEach { filter ->
                 item {
                     Text(
                         text = filter.displayName,
                         style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        modifier = Modifier.padding(bottom = 4.dp)
                     )
 
                     LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.padding(bottom = 8.dp)
                     ) {
                         items(filter.values) { value ->
                             val isSelected =
