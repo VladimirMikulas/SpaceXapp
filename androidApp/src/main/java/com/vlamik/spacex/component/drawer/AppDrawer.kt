@@ -93,10 +93,12 @@ fun AppDrawer(
                                         style = MaterialTheme.typography.titleMedium
                                     )
                                 },
-                                selected = currentRoute == route,
+                                selected = currentRoute.path == route.path,
                                 onClick = {
-                                    onItemSelected(route)
-                                    scope.launch { drawerState.close() }
+                                    scope.launch {
+                                        drawerState.close()
+                                        onItemSelected(route)
+                                    }
                                 },
                                 icon = {
                                     Icon(
@@ -116,12 +118,15 @@ fun AppDrawer(
 
                     // Footer Section
                     item {
+
                         Spacer(Modifier.height(24.dp))
                         HorizontalDivider()
                         NavigationDrawerItem(
                             label = { Text(stringResource(R.string.settings)) },
                             icon = { Icon(Icons.Default.Settings, null) },
-                            onClick = { /* Setting Navigation */ },
+                            onClick = {
+                                scope.launch { drawerState.close() }
+                            },
                             selected = false
                         )
                     }

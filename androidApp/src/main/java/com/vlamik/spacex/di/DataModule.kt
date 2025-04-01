@@ -9,6 +9,8 @@ import com.vlamik.core.commons.ApiUrl
 import com.vlamik.core.commons.endpoints.OpenLibraryEndpoint
 import com.vlamik.core.data.repositories.AppRepository
 import com.vlamik.core.data.repositories.AppRepositoryImpl
+import com.vlamik.core.data.repositories.CrewRepository
+import com.vlamik.core.data.repositories.CrewRepositoryImpl
 import com.vlamik.core.data.repositories.RocketsRepository
 import com.vlamik.core.data.repositories.RocketsRepositoryImpl
 import dagger.Module
@@ -56,6 +58,14 @@ open class DataModule {
     fun providesRocketsRepository(
         repo: RocketsRepositoryImpl
     ): RocketsRepository {
+        return repo
+    }
+
+    @Provides
+    @Singleton
+    fun providesCrewRepository(
+        repo: CrewRepositoryImpl
+    ): CrewRepository {
         return repo
     }
 

@@ -65,4 +65,9 @@
     <string name="settings">Settings</string>
     <string name="settings_toast">Settings are not implemented yet</string>
 
+    <!-- Crew List Screen -->
+    <string name="no_crew_available">No crew members available</string>
+    <string name="refresh">Refresh</string>
+    <string name="active">active</string>
+
 </resources>

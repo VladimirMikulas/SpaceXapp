@@ -1,4 +1,4 @@
-package com.vlamik.spacex.features.details
+package com.vlamik.spacex.features.rocketdetail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider

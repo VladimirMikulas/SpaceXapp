@@ -9,4 +9,7 @@ object OpenLibraryEndpoint {
 
     fun rocket(id: String) =
         "rockets/$id"
+
+    val crew: String
+        get() = "crew"
 }

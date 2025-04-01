@@ -1,4 +1,4 @@
-package com.vlamik.spacex.features.launch
+package com.vlamik.spacex.features.rocketlaunch
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -32,7 +32,7 @@ import com.vlamik.spacex.component.appbars.SpaceXAppBar
 import com.vlamik.spacex.core.utils.preview.DeviceFormatPreview
 import com.vlamik.spacex.core.utils.preview.FontScalePreview
 import com.vlamik.spacex.core.utils.preview.ThemeModePreview
-import com.vlamik.spacex.features.launch.RocketLaunchViewModel.LaunchRocketState
+import com.vlamik.spacex.features.rocketlaunch.RocketLaunchViewModel.LaunchRocketState
 import com.vlamik.spacex.theme.TemplateTheme
 
 @Composable

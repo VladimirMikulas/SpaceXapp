@@ -8,8 +8,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.vlamik.spacex.MainActivity.ViewModelFactoryProvider
-import com.vlamik.spacex.features.details.RocketDetailViewModel
-import com.vlamik.spacex.features.launch.RocketLaunchViewModel
+import com.vlamik.spacex.features.rocketdetail.RocketDetailViewModel
+import com.vlamik.spacex.features.rocketlaunch.RocketLaunchViewModel
 import dagger.hilt.android.EntryPointAccessors
 
 interface BaseViewModelFactoryProvider {

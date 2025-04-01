@@ -1,4 +1,4 @@
-package com.vlamik.spacex.features.list
+package com.vlamik.spacex.features.rocketslist
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -50,9 +50,9 @@ import com.vlamik.spacex.core.filtering.FilterItem
 import com.vlamik.spacex.core.utils.preview.DeviceFormatPreview
 import com.vlamik.spacex.core.utils.preview.FontScalePreview
 import com.vlamik.spacex.core.utils.preview.ThemeModePreview
-import com.vlamik.spacex.features.list.RocketsListViewModel.ListScreenUiState.DataError
-import com.vlamik.spacex.features.list.RocketsListViewModel.ListScreenUiState.LoadingData
-import com.vlamik.spacex.features.list.RocketsListViewModel.ListScreenUiState.UpdateSuccess
+import com.vlamik.spacex.features.rocketslist.RocketsListViewModel.ListScreenUiState.DataError
+import com.vlamik.spacex.features.rocketslist.RocketsListViewModel.ListScreenUiState.LoadingData
+import com.vlamik.spacex.features.rocketslist.RocketsListViewModel.ListScreenUiState.UpdateSuccess
 import com.vlamik.spacex.navigation.NavRoutes
 import com.vlamik.spacex.theme.SoftGray
 import com.vlamik.spacex.theme.TemplateTheme
@@ -77,17 +77,17 @@ fun RocketsListScreen(
         onItemSelected = navigateTo,
         drawerState = drawerState
     ) {
-    RocketsListContent(
-        state = state,
-        drawerState = drawerState,
-        searchQuery = searchQuery,
-        activeFilters = activeFilters,
-        availableFilters = availableFilters,
-        onDetailsClicked = openDetailsClicked,
-        onRefresh = viewModel::refresh,
-        onSearchTextChange = viewModel::updateSearchQuery,
-        onFilterSelected = viewModel::updateFilters
-    )
+        RocketsListContent(
+            state = state,
+            drawerState = drawerState,
+            searchQuery = searchQuery,
+            activeFilters = activeFilters,
+            availableFilters = availableFilters,
+            onDetailsClicked = openDetailsClicked,
+            onRefresh = viewModel::refresh,
+            onSearchTextChange = viewModel::updateSearchQuery,
+            onFilterSelected = viewModel::updateFilters
+        )
     }
 }
 
@@ -129,14 +129,15 @@ private fun RocketsListContent(
     ) { paddingValues ->
         Surface(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
+                .fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
             PullToRefreshBox(
                 isRefreshing = state is LoadingData,
-                onRefresh = onRefresh
-            ) {
+                onRefresh = onRefresh,
+                modifier = Modifier.padding(paddingValues),
+
+                ) {
                 when (state) {
                     is LoadingData -> {
                     }
@@ -353,26 +354,6 @@ private fun RocketsListScreenPreview() {
                     values = listOf("Before 2015", "2015-2020", "After 2020")
                 )
             ),
-            onDetailsClicked = {},
-            onRefresh = {},
-            onSearchTextChange = {},
-            onFilterSelected = {}
-        )
-    }
-}
-
-@ThemeModePreview
-@FontScalePreview
-@DeviceFormatPreview
-@Composable
-private fun LoadingStatePreview() {
-    TemplateTheme {
-        RocketsListContent(
-            state = LoadingData,
-            drawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
-            searchQuery = "",
-            activeFilters = FilterState(),
-            availableFilters = emptyList(),
             onDetailsClicked = {},
             onRefresh = {},
             onSearchTextChange = {},

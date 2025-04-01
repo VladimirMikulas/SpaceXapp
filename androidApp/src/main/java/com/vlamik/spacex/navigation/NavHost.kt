@@ -11,9 +11,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.vlamik.spacex.features.details.RocketDetailScreen
-import com.vlamik.spacex.features.launch.RocketLaunchScreen
-import com.vlamik.spacex.features.list.RocketsListScreen
+import com.vlamik.spacex.features.crewlist.CrewListScreen
+import com.vlamik.spacex.features.rocketdetail.RocketDetailScreen
+import com.vlamik.spacex.features.rocketlaunch.RocketLaunchScreen
+import com.vlamik.spacex.features.rocketslist.RocketsListScreen
 
 
 @Composable
@@ -21,7 +22,6 @@ fun SpaceXNavHost(
     navController: NavHostController = rememberNavController(),
     sensorManager: SensorManager = LocalContext.current.getSystemService(Context.SENSOR_SERVICE) as SensorManager
 ) {
-    val currentRoute = rememberCurrentRoute(navController)
     NavHost(navController = navController, startDestination = NavRoutes.RocketsList.path) {
         composable(NavRoutes.RocketsList.path) {
             RocketsListScreen(
@@ -34,16 +34,20 @@ fun SpaceXNavHost(
                         popUpTo(navController.graph.startDestinationId)
                         launchSingleTop = true
                     }
-                },
-                currentRoute = currentRoute
-            )
+                })
         }
 
         composable(NavRoutes.Crew.path) {
-            /*CrewScreen(
-                onBackClicked = { navController.popBackStack() }
-            )*/
+            CrewListScreen(
+                hiltViewModel(),
+                navigateTo = { route ->
+                    navController.navigate(route.path) {
+                        popUpTo(navController.graph.startDestinationId)
+                        launchSingleTop = true
+                    }
+                })
         }
+
         composable(NavRoutes.RocketDetails.path) { backStackEntry ->
             backStackEntry.arguments?.getString(NavRoutes.DETAILS_ID_KEY)?.let {
                 RocketDetailScreen(

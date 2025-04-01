@@ -1,4 +1,4 @@
-package com.vlamik.spacex.features.launch
+package com.vlamik.spacex.features.rocketlaunch
 
 import android.hardware.Sensor
 import android.hardware.SensorEvent

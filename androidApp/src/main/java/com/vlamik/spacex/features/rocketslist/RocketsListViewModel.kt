@@ -1,4 +1,4 @@
-package com.vlamik.spacex.features.list
+package com.vlamik.spacex.features.rocketslist
 
 
 import android.content.Context
@@ -13,9 +13,9 @@ import com.vlamik.spacex.core.filtering.FilterItem
 import com.vlamik.spacex.core.filtering.FilterUtils
 import com.vlamik.spacex.core.filtering.RangeFilter
 import com.vlamik.spacex.core.filtering.YearFilter
-import com.vlamik.spacex.features.list.RocketsListViewModel.ListScreenUiState.DataError
-import com.vlamik.spacex.features.list.RocketsListViewModel.ListScreenUiState.LoadingData
-import com.vlamik.spacex.features.list.RocketsListViewModel.ListScreenUiState.UpdateSuccess
+import com.vlamik.spacex.features.rocketslist.RocketsListViewModel.ListScreenUiState.DataError
+import com.vlamik.spacex.features.rocketslist.RocketsListViewModel.ListScreenUiState.LoadingData
+import com.vlamik.spacex.features.rocketslist.RocketsListViewModel.ListScreenUiState.UpdateSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -218,12 +218,12 @@ class RocketsListViewModel @Inject constructor(
 
     // State and data classes
     sealed interface ListScreenUiState {
-        object LoadingData : ListScreenUiState
+        data object LoadingData : ListScreenUiState
         data class UpdateSuccess(
             val rockets: List<RocketListItemModel>,
             val filteredRockets: List<RocketListItemModel> = rockets
         ) : ListScreenUiState
 
-        object DataError : ListScreenUiState
+        data object DataError : ListScreenUiState
     }
 }
