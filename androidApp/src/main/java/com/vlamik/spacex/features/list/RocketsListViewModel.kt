@@ -65,10 +65,10 @@ class RocketsListViewModel @Inject constructor(
         loadRockets()
     }
 
-    private fun loadRockets() {
+    private fun loadRockets(refresh: Boolean = false) {
         viewModelScope.launch {
             _state.value = LoadingData
-            getRocketsList()
+            getRocketsList(refresh)
                 .onSuccess { rockets ->
                     _state.value = UpdateSuccess(
                         rockets = rockets,
@@ -85,7 +85,7 @@ class RocketsListViewModel @Inject constructor(
             _searchQuery.value = ""
             _activeFilters.value = FilterState()
 
-            loadRockets()
+            loadRockets(refresh = true)
         }
     }
 

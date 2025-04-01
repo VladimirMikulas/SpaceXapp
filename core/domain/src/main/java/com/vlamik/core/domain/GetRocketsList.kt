@@ -8,8 +8,8 @@ import javax.inject.Inject
 class GetRocketsList @Inject constructor(
     private val rocketsRepository: RocketsRepository
 ) {
-    suspend operator fun invoke(): Result<List<RocketListItemModel>> {
-        return rocketsRepository.getRockets().map { rocketList ->
+    suspend operator fun invoke(refresh: Boolean = false): Result<List<RocketListItemModel>> {
+        return rocketsRepository.getRockets(refresh).map { rocketList ->
             rocketList.map { rocket -> rocket.toRocketListItemModel() }
         }
     }

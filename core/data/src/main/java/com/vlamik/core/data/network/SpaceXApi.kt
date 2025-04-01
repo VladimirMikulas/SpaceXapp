@@ -11,7 +11,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.coroutines.CoroutineContext
 
-class OpenLibraryService
+class SpaceXApi
 @Inject constructor(
     private val httpClient: OpenLibraryHttpClient,
     @BackgroundDispatcher private val coroutineContext: CoroutineContext
