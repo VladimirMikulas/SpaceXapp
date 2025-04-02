@@ -14,7 +14,7 @@ import io.ktor.client.engine.HttpClientEngineFactory
 )
 class DataTestModule : DataModule() {
 
-    override val baseUrl = "localhost"
+    override val baseUrl = super.baseUrl
 
     override fun internalHttpClientEngine(): HttpClientEngineFactory<*> =
         object : HttpClientEngineFactory<HttpClientEngineConfig> {

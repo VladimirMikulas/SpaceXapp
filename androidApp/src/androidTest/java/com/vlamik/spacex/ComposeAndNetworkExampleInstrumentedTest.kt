@@ -47,7 +47,7 @@ class ComposeAndNetworkExampleInstrumentedTest {
     @Test
     fun listRocketsSuccess() {
         MockOpenLibraryApi.giveResponse(
-            request = OpenLibraryEndpoint.allRockets,
+            request = "${OpenLibraryEndpoint.baseUrl}/${OpenLibraryEndpoint.allRockets}",
             response = MockOpenLibraryApi.ResponseValue(
                 statusCode = HttpStatusCode.OK,
                 content = DataTestResources.rocketListJson()
@@ -75,7 +75,7 @@ class ComposeAndNetworkExampleInstrumentedTest {
     @Test
     fun listNewsError() {
         MockOpenLibraryApi.giveResponse(
-            request = OpenLibraryEndpoint.allRockets,
+            request = "${OpenLibraryEndpoint.baseUrl}/${OpenLibraryEndpoint.allRockets}",
             response = MockOpenLibraryApi.ResponseValue(
                 statusCode = HttpStatusCode.BadRequest
             )
