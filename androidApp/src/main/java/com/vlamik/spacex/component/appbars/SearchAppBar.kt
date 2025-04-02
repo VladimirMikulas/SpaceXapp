@@ -147,10 +147,7 @@ private fun SearchModeContent(
             )
         }
 
-        HorizontalDivider(
-            thickness = 1.dp,
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
-        )
+        HorizontalDivider()
 
         val maxFilterHeight = 160.dp
         LazyColumn(

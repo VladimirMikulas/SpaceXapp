@@ -52,8 +52,8 @@ fun RocketDetailScreen(
     val rocketDetailState by detailsViewModel.updateState.collectAsState()
 
     when (val state = rocketDetailState) {
-        RocketDetailViewModel.UiState.ErrorFromAPI -> ErrorMessage(errorMessage = stringResource(id = R.string.data_error))
-        RocketDetailViewModel.UiState.LoadingFromAPI -> LoadingIndicator()
+        RocketDetailViewModel.UiState.DataError -> ErrorMessage(errorMessage = stringResource(id = R.string.data_error))
+        RocketDetailViewModel.UiState.LoadingData -> LoadingIndicator()
         is RocketDetailViewModel.UiState.Success -> {
             RocketDetailComposable(
                 state = state,

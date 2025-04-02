@@ -34,7 +34,7 @@ android {
             kotlinCompilerExtensionVersion = "1.7.5"
         }
 
-        testInstrumentationRunner = "com.vlamik.news.TestRunner"
+        testInstrumentationRunner = "com.vlamik.spacex.TestRunner"
         vectorDrawables { useSupportLibrary = true }
     }
 
@@ -55,7 +55,10 @@ android {
 
     hilt { enableAggregatingTask = true }
 
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 
     kotlinOptions {
         freeCompilerArgs = freeCompilerArgs + listOf(
@@ -120,6 +123,7 @@ dependencies {
 
     // Test Dependencies
     testImplementation(libs.bundles.test.core)
+    testImplementation(libs.androidx.junit.ktx)
     testImplementation(libs.mockk.agent)
     testImplementation(libs.mockk.android)
 }

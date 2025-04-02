@@ -18,21 +18,21 @@ class RocketDetailViewModel @AssistedInject constructor(
 ) : ViewModel() {
 
     private val _updateState =
-        MutableStateFlow<UiState>(UiState.LoadingFromAPI)
+        MutableStateFlow<UiState>(UiState.LoadingData)
     val updateState = _updateState.asStateFlow()
 
     init {
         viewModelScope.launch {
             getRocketDetail(rocketId)
                 .onSuccess { _updateState.value = UiState.Success(it) }
-                .onFailure { _updateState.value = UiState.ErrorFromAPI }
+                .onFailure { _updateState.value = UiState.DataError }
         }
     }
 
     sealed interface UiState {
-        object LoadingFromAPI : UiState
+        object LoadingData : UiState
         data class Success(val rocket: RocketDetailModel) : UiState
-        object ErrorFromAPI : UiState
+        object DataError : UiState
     }
 
     @AssistedFactory

@@ -3,6 +3,7 @@
 import com.github.benmanes.gradle.versions.reporter.result.Result
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jlleitschuh.gradle.ktlint.KtlintExtension
 
 buildscript {
@@ -14,7 +15,7 @@ buildscript {
     dependencies {
         @Suppress("GradleDynamicVersion")
         classpath("com.github.ben-manes:gradle-versions-plugin:+")
-        classpath("org.jlleitschuh.gradle:ktlint-gradle:12.1.0")
+        classpath(libs.ktlint.gradle)
     }
 }
 
@@ -30,7 +31,7 @@ plugins {
     alias(libs.plugins.compose.compiler) apply false
 }
 
-val detektVersion = libs.versions.detekt.get().toString()
+val detektVersion = libs.versions.detekt.get()
 val ktlintAlias: String = libs.plugins.ktlint.get().pluginId
 val detektAlias: String = libs.plugins.detekt.get().pluginId
 
@@ -56,19 +57,21 @@ allprojects {
     }
 
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-        kotlinOptions.jvmTarget = "17"
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
     }
 }
 
 fun String.isNonStable(): Boolean {
-    val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { toUpperCase().contains(it) }
+    val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { uppercase().contains(it) }
     val regex = "^[0-9,.v-]+(-r)?$".toRegex()
     val isStable = stableKeyword || regex.matches(this)
     return isStable.not()
 }
 
 tasks.register("clean", Delete::class) {
-    delete(rootProject.buildDir)
+    delete(getLayout().buildDirectory)
 }
 
 tasks.withType<DependencyUpdatesTask> {

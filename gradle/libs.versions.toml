@@ -1,9 +1,9 @@
 [versions]
-sdk-compile = "34"
-sdk-target = "34"
+sdk-compile = "35"
+sdk-target = "35"
 sdk-min = "26"
 
-gradle-android = "8.1.4"
+gradle-android = "8.8.2"
 gradle-versions = "0.43.0"
 
 compose = "1.7.8"
@@ -15,44 +15,39 @@ glide = "1.0.0-beta01"
 accompanist = "0.30.1"
 datastore = "1.1.4"
 
-lint = "31.7.0"
+lint = "31.9.1"
+ktlint-gradle = "12.1.2"
 detekt = "1.22.0"
 
 javax = "1"
-hilt = "2.50"
+hilt = "2.56.1"
 mockk = "1.13.5"
-hilt-testing = "2.49"
+hilt-testing = "2.56.1"
 dagger = "2.43.2"
-kotlin = "2.0.21"
+kotlin = "2.1.20"
 ktor = "3.0.0"
 jvm = "5.4.1"
 coroutines = "1.9.0"
+junit-ktx = "1.2.1"
 
 [libraries]
 ## Android
-androidx-core = { group = "androidx.core", name = "core-ktx", version = "1.13.1" }
-androidx-lifecycle = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version = "2.8.6" }
-androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version = "1.9.2" }
+androidx-core = { group = "androidx.core", name = "core-ktx", version = "1.15.0" }
+androidx-lifecycle = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version = "2.8.7" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version = "1.10.1" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "compose-navigation-hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
-
 compose = { group = "androidx.compose.ui", name = "ui", version.ref = "compose" }
 compose-tools = { group = "androidx.compose.ui", name = "ui-tooling-preview", version.ref = "compose" }
 compose-material = { group = "androidx.compose.material3", name = "material3", version.ref = "compose-material" }
 compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core", version.ref = "material-icons" }
 compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "material-icons" }
 compose-material-window = { group = "androidx.compose.material3", name = "material3-window-size-class", version.ref = "compose-material" }
-
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "compose-navigation" }
-
-accompanist-swiperefresh = { group = "com.google.accompanist", name = "accompanist-swiperefresh", version.ref = "accompanist" }
 accompanist-systemuicontroller = { group = "com.google.accompanist", name = "accompanist-systemuicontroller", version.ref = "accompanist" }
-
 glide = { group = "com.github.bumptech.glide", name = "compose", version.ref = "glide" }
-
 datastore-android = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
-
 splashscreen = { group = "androidx.core", name = "core-splashscreen", version = "1.0.1" }
 
 # Lint check for Compose
@@ -87,19 +82,22 @@ ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serializatio
 
 # Testing
 junit = { group = "junit", name = "junit", version = "4.13.2" }
+androidx-junit-ktx = { group = "androidx.test.ext", name = "junit-ktx", version.ref = "junit-ktx" }
+robolectric = { group = "org.robolectric", name = "robolectric", version = "4.14.1" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 mockk-android = { group = "io.mockk", name = "mockk-android", version.ref = "mockk" }
 mockk-agent = { group = "io.mockk", name = "mockk-agent-jvm", version.ref = "mockk" }
 turbine = { group = "app.cash.turbine", name = "turbine", version = "0.12.3" }
-
 hilt-test = { group = "com.google.dagger", name = "hilt-android-testing", version.ref = "hilt-testing" }
 hilt-test-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt-testing" }
-
 coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 
 ## Dependencies of the included build-logic
 gradle-plugin-android = { group = "com.android.tools.build", name = "gradle", version.ref = "gradle-android" }
 gradle-plugin-kotlin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
+
+ktlint-gradle = { module = "org.jlleitschuh.gradle:ktlint-gradle", version.ref = "ktlint-gradle" }
+
 
 [bundles]
 compose = [
@@ -149,6 +147,7 @@ network = [
 
 test-core = [
     "junit",
+    "robolectric",
     "mockk",
     "coroutines-test",
     "turbine"
