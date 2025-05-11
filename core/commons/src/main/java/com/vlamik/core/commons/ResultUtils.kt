@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flattenConcat
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlin.coroutines.cancellation.CancellationException
 
 fun <T> Flow<T>.toResult(): Flow<Result<T>> =
     map { Result.success(it) }
@@ -35,3 +36,11 @@ fun <T, R> Flow<Result<T>>.foldOnEach(
             }
         )
     }
+
+inline fun <reified E : Throwable, T> Result<T>.onFailureOrRethrow(action: (Throwable) -> Unit): Result<T> {
+    return onFailure { if (it is E) throw it else action(it) }
+}
+
+inline fun <T> Result<T>.onFailureIgnoreCancellation(action: (Throwable) -> Unit): Result<T> {
+    return onFailureOrRethrow<CancellationException, T>(action)
+}
