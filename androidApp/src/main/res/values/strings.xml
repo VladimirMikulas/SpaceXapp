@@ -16,6 +16,7 @@
     <string name="label_first_flight">First flight: </string>
     <string name="no_rockets_found">No rockets found</string>
     <string name="retry">Retry</string>
+    <string name="cd_navigate_to_details">Navigate to ${rocket.name} details</string>
 
     <!-- Search App Bar -->
     <string name="clear">Clear</string>

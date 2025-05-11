@@ -1,6 +1,5 @@
 package com.vlamik.spacex.features.rocketslist
 
-
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,17 +12,13 @@ import com.vlamik.spacex.core.filtering.FilterItem
 import com.vlamik.spacex.core.filtering.FilterUtils
 import com.vlamik.spacex.core.filtering.RangeFilter
 import com.vlamik.spacex.core.filtering.YearFilter
-import com.vlamik.spacex.features.rocketslist.RocketsListViewModel.ListScreenUiState.DataError
-import com.vlamik.spacex.features.rocketslist.RocketsListViewModel.ListScreenUiState.LoadingData
-import com.vlamik.spacex.features.rocketslist.RocketsListViewModel.ListScreenUiState.UpdateSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -33,88 +28,123 @@ class RocketsListViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow<ListScreenUiState>(LoadingData)
-    val state = _state.asStateFlow()
+    private val _uiState = MutableStateFlow(RocketsListContract.State())
+    val uiState = _uiState.asStateFlow()
 
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery = _searchQuery.asStateFlow()
-
-    private val _activeFilters = MutableStateFlow(FilterState())
-    val activeFilters = _activeFilters.asStateFlow()
-
-    val availableFilters: StateFlow<List<FilterItem>>
-        get() = _state.map { state ->
-            when (state) {
-                is UpdateSuccess -> listOf(
-                    createNameFilter(state.rockets),
-                    createFirstFlightFilter(state.rockets),
-                    createHeightFilter(state.rockets),
-                    createDiameterFilter(state.rockets),
-                    createMassFilter(state.rockets)
-                )
-
-                else -> emptyList()
-            }
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    private val _effect = Channel<RocketsListContract.Effect>()
+    val effect = _effect.receiveAsFlow() // Using Channel for one-time events
 
     init {
-        loadRockets()
+        processIntent(RocketsListContract.Intent.LoadRockets)
     }
 
-    private fun loadRockets(refresh: Boolean = false) {
-        viewModelScope.launch {
-            _state.value = LoadingData
-            getRocketsList(refresh)
-                .onSuccess { rockets ->
-                    _state.value = UpdateSuccess(
+    fun processIntent(intent: RocketsListContract.Intent) {
+        viewModelScope.launch { // Most intents will trigger suspend functions or change state
+            when (intent) {
+                is RocketsListContract.Intent.LoadRockets -> loadRockets(refresh = false)
+                is RocketsListContract.Intent.RefreshRockets -> refreshRockets()
+                is RocketsListContract.Intent.SearchQueryChanged -> updateSearchQuery(intent.query)
+                is RocketsListContract.Intent.FilterSelected -> updateFilters(intent.newFilterState)
+                is RocketsListContract.Intent.RocketClicked -> _effect.send(
+                    RocketsListContract.Effect.OpenRocketDetails(
+                        intent.rocketId
+                    )
+                )
+
+                is RocketsListContract.Intent.NavigateTo -> _effect.send(
+                    RocketsListContract.Effect.NavigateToRoute(
+                        intent.route
+                    )
+                )
+
+                is RocketsListContract.Intent.DrawerMenuClicked -> _effect.send(RocketsListContract.Effect.OpenDrawer)
+                is RocketsListContract.Intent.RetryLoadRockets -> loadRockets(refresh = false)
+                is RocketsListContract.Intent.ConsumeError -> _uiState.update { it.copy(error = null) }
+            }
+        }
+    }
+
+    private suspend fun loadRockets(refresh: Boolean) {
+        _uiState.update {
+            it.copy(
+                isLoading = !refresh,
+                isRefreshing = refresh, // Shows pull-to-refresh indicator
+                error = null
+            )
+        }
+
+        getRocketsList(refresh)
+            .onSuccess { rockets ->
+                val availableFilters = createAvailableFilters(rockets)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        isRefreshing = false,
                         rockets = rockets,
-                        filteredRockets = applyFilters(rockets)
+                        filteredRockets = applyFiltersToData(
+                            rockets,
+                            it.searchQuery,
+                            it.activeFilters
+                        ),
+                        availableFilters = availableFilters,
+                        error = null
                     )
                 }
-                .onFailure { _state.value = DataError }
+            }
+            .onFailure { throwable ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        isRefreshing = false,
+                        error = throwable.message ?: context.getString(R.string.data_error)
+                    )
+                }
+            }
+    }
+
+    private suspend fun refreshRockets() {
+        // Reset search and filters on refresh
+        _uiState.update {
+            it.copy(
+                searchQuery = "",
+                activeFilters = FilterState()
+            )
         }
+        loadRockets(refresh = true)
     }
 
-    fun refresh() {
-        viewModelScope.launch {
-            _state.value = LoadingData
-            _searchQuery.value = ""
-            _activeFilters.value = FilterState()
-
-            loadRockets(refresh = true)
-        }
-    }
-
-    fun updateSearchQuery(query: String) {
-        _searchQuery.value = query
-        applyFilters()
-    }
-
-    fun updateFilters(newFilterState: FilterState) {
-        _activeFilters.value = newFilterState
-        applyFilters()
-    }
-
-    private fun applyFilters() {
-        val current = _state.value
-        if (current is UpdateSuccess) {
-            _state.value = current.copy(
-                filteredRockets = applyFilters(current.rockets)
+    private fun updateSearchQuery(query: String) {
+        _uiState.update { currentState ->
+            currentState.copy(
+                searchQuery = query,
+                filteredRockets = applyFiltersToData(
+                    currentState.rockets,
+                    query,
+                    currentState.activeFilters
+                )
             )
         }
     }
 
-    private fun applyFilters(
-        rockets: List<RocketListItemModel>,
-        query: String = _searchQuery.value,
-        filters: FilterState = _activeFilters.value
-    ): List<RocketListItemModel> {
+    private fun updateFilters(newFilterState: FilterState) {
+        _uiState.update { currentState ->
+            currentState.copy(
+                activeFilters = newFilterState,
+                filteredRockets = applyFiltersToData(
+                    currentState.rockets,
+                    currentState.searchQuery,
+                    newFilterState
+                )
+            )
+        }
+    }
 
-        val filtered = rockets
+    private fun applyFiltersToData(
+        rockets: List<RocketListItemModel>,
+        query: String,
+        filters: FilterState
+    ): List<RocketListItemModel> {
+        return rockets
             .filter { rocket ->
                 query.isEmpty() || listOf(
                     rocket.name,
@@ -126,41 +156,44 @@ class RocketsListViewModel @Inject constructor(
             }
             .filter { rocket ->
                 filters.selectedFilters.all { (filterKey, selectedValues) ->
-                    // If no values are selected for this filter, ignore it (return true)
                     if (selectedValues.isEmpty()) {
                         true
                     } else {
-                        val result = when (filterKey) {
+                        when (filterKey) {
                             FilterConstants.KEY_NAME ->
                                 selectedValues.any { it.equals(rocket.name, ignoreCase = true) }
-
                             FilterConstants.KEY_FIRST_FLIGHT ->
                                 YearFilter.matches(rocket.firstFlight, selectedValues, context)
-
                             FilterConstants.KEY_HEIGHT ->
                                 RangeFilter.matches(rocket.height, selectedValues, context)
-
                             FilterConstants.KEY_DIAMETER ->
                                 RangeFilter.matches(rocket.diameter, selectedValues, context)
-
                             FilterConstants.KEY_MASS ->
                                 RangeFilter.matches(rocket.mass.toDouble(), selectedValues, context)
-
                             else -> true
                         }
-                        result
                     }
                 }
             }
-        return filtered
     }
 
-    // Filter creation functions
+    private fun createAvailableFilters(rockets: List<RocketListItemModel>): List<FilterItem> {
+        if (rockets.isEmpty()) return emptyList()
+        return listOf(
+            createNameFilter(rockets),
+            createFirstFlightFilter(rockets),
+            createHeightFilter(rockets),
+            createDiameterFilter(rockets),
+            createMassFilter(rockets)
+        )
+    }
+
+    // Filter creation functions (remain the same, just called differently)
     private fun createNameFilter(rockets: List<RocketListItemModel>): FilterItem {
         return FilterItem(
             key = FilterConstants.KEY_NAME,
             displayName = context.getString(R.string.filter_name),
-            values = rockets.map { it.name }
+            values = rockets.map { it.name }.distinct().sorted()
         )
     }
 
@@ -214,16 +247,5 @@ class RocketsListViewModel @Inject constructor(
             ),
             extraParams = mapOf(FilterConstants.PARAM_UNIT to context.getString(R.string.unit_kilograms))
         )
-    }
-
-    // State and data classes
-    sealed interface ListScreenUiState {
-        data object LoadingData : ListScreenUiState
-        data class UpdateSuccess(
-            val rockets: List<RocketListItemModel>,
-            val filteredRockets: List<RocketListItemModel> = rockets
-        ) : ListScreenUiState
-
-        data object DataError : ListScreenUiState
     }
 }

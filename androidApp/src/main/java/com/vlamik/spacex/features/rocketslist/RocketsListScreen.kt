@@ -1,5 +1,6 @@
 package com.vlamik.spacex.features.rocketslist
 
+// import kotlinx.coroutines.flow.Flow // Not directly used here, but by viewModel.effect
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.Button
-import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -36,12 +37,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.vlamik.core.domain.models.RocketListItemModel
 import com.vlamik.spacex.R
+import com.vlamik.spacex.component.LoadingIndicator
 import com.vlamik.spacex.component.appbars.SearchAppBar
 import com.vlamik.spacex.component.appbars.models.FilterParameter
 import com.vlamik.spacex.component.appbars.models.FilterState
@@ -50,9 +53,6 @@ import com.vlamik.spacex.core.filtering.FilterItem
 import com.vlamik.spacex.core.utils.preview.DeviceFormatPreview
 import com.vlamik.spacex.core.utils.preview.FontScalePreview
 import com.vlamik.spacex.core.utils.preview.ThemeModePreview
-import com.vlamik.spacex.features.rocketslist.RocketsListViewModel.ListScreenUiState.DataError
-import com.vlamik.spacex.features.rocketslist.RocketsListViewModel.ListScreenUiState.LoadingData
-import com.vlamik.spacex.features.rocketslist.RocketsListViewModel.ListScreenUiState.UpdateSuccess
 import com.vlamik.spacex.navigation.NavRoutes
 import com.vlamik.spacex.theme.SoftGray
 import com.vlamik.spacex.theme.TemplateTheme
@@ -66,88 +66,111 @@ fun RocketsListScreen(
     navigateTo: (NavRoutes) -> Unit,
     currentRoute: NavRoutes = NavRoutes.RocketsList
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.uiState.collectAsState()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val activeFilters by viewModel.activeFilters.collectAsState()
-    val availableFilters by viewModel.availableFilters.collectAsState()
+    val scope = rememberCoroutineScope()
+
+    // Handling side effects
+    LaunchedEffect(key1 = viewModel.effect) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is RocketsListContract.Effect.OpenRocketDetails -> openDetailsClicked(effect.rocketId)
+                is RocketsListContract.Effect.NavigateToRoute -> navigateTo(effect.route)
+                is RocketsListContract.Effect.OpenDrawer -> {
+                    scope.launch { drawerState.open() }
+                }
+            }
+        }
+    }
 
     AppDrawer(
         currentRoute = currentRoute,
-        onItemSelected = navigateTo,
+        onItemSelected = { route ->
+            viewModel.processIntent(
+                RocketsListContract.Intent.NavigateTo(
+                    route
+                )
+            )
+        },
         drawerState = drawerState
     ) {
         RocketsListContent(
             state = state,
-            drawerState = drawerState,
-            searchQuery = searchQuery,
-            activeFilters = activeFilters,
-            availableFilters = availableFilters,
-            onDetailsClicked = openDetailsClicked,
-            onRefresh = viewModel::refresh,
-            onSearchTextChange = viewModel::updateSearchQuery,
-            onFilterSelected = viewModel::updateFilters
+            onIntent = viewModel::processIntent
         )
     }
 }
 
 @Composable
 private fun RocketsListContent(
-    state: RocketsListViewModel.ListScreenUiState,
-    drawerState: DrawerState,
-    searchQuery: String,
-    activeFilters: FilterState,
-    availableFilters: List<FilterItem>,
-    onDetailsClicked: (String) -> Unit,
-    onRefresh: () -> Unit,
-    onSearchTextChange: (String) -> Unit,
-    onFilterSelected: (FilterState) -> Unit
+    state: RocketsListContract.State,
+    onIntent: (RocketsListContract.Intent) -> Unit
 ) {
-    val filterParameters = availableFilters.map { filterItem ->
+    val filterParameters = state.availableFilters.map { filterItem ->
         FilterParameter(
             key = filterItem.key,
             displayName = filterItem.displayName,
             values = filterItem.values
         )
     }
-    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
             SearchAppBar(
                 title = stringResource(R.string.rockets),
-                searchText = searchQuery,
-                activeFilters = activeFilters,
+                searchText = state.searchQuery,
+                activeFilters = state.activeFilters,
                 filters = filterParameters,
-                onSearchTextChange = onSearchTextChange,
-                onFilterSelected = onFilterSelected,
+                onSearchTextChange = { query ->
+                    onIntent(
+                        RocketsListContract.Intent.SearchQueryChanged(
+                            query
+                        )
+                    )
+                },
+                onFilterSelected = { filterState ->
+                    onIntent(
+                        RocketsListContract.Intent.FilterSelected(
+                            filterState
+                        )
+                    )
+                },
                 onMenuClick = {
-                    scope.launch { drawerState.open() }
+                    onIntent(RocketsListContract.Intent.DrawerMenuClicked)
                 }
             )
         }
     ) { paddingValues ->
         Surface(
             modifier = Modifier
-                .fillMaxSize(),
+                .fillMaxSize()
+                .padding(paddingValues),
             color = MaterialTheme.colorScheme.background
         ) {
             PullToRefreshBox(
-                isRefreshing = state is LoadingData,
-                onRefresh = onRefresh,
-                modifier = Modifier.padding(paddingValues),
-
-                ) {
-                when (state) {
-                    is LoadingData -> {
+                isRefreshing = state.isRefreshing,
+                onRefresh = { onIntent(RocketsListContract.Intent.RefreshRockets) },
+            ) {
+                when {
+                    state.isLoading -> {
+                        LoadingIndicator()
                     }
 
-                    is UpdateSuccess -> RocketListContent(
-                        rockets = state.filteredRockets,
-                        onDetailsClicked = onDetailsClicked
-                    )
+                    state.error != null -> {
+                        ErrorState(
+                            errorMessage = state.error,
+                            onRetry = { onIntent(RocketsListContract.Intent.RetryLoadRockets) }
+                        )
+                    }
 
-                    is DataError -> ErrorState(onRetry = onRefresh)
+                    else -> { // Data is loaded (can be empty or not)
+                        RocketDataContent(
+                            rockets = state.filteredRockets,
+                            onDetailsClicked = { rocketId ->
+                                onIntent(RocketsListContract.Intent.RocketClicked(rocketId))
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -155,7 +178,7 @@ private fun RocketsListContent(
 }
 
 @Composable
-private fun ErrorState(onRetry: () -> Unit) {
+private fun ErrorState(errorMessage: String, onRetry: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -164,8 +187,8 @@ private fun ErrorState(onRetry: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = stringResource(R.string.data_error),
-            style = MaterialTheme.typography.titleMedium,
+            text = errorMessage,
+            style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.error
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -176,7 +199,7 @@ private fun ErrorState(onRetry: () -> Unit) {
 }
 
 @Composable
-private fun RocketListContent(
+private fun RocketDataContent( // Renamed from RocketListContent for clarity
     rockets: List<RocketListItemModel>,
     onDetailsClicked: (String) -> Unit
 ) {
@@ -188,7 +211,7 @@ private fun RocketListContent(
                 .padding(horizontal = 16.dp, vertical = 8.dp)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp)),
-            color = SoftGray
+            color = SoftGray // Consider using MaterialTheme.colorScheme.surfaceVariant or similar
         ) {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -201,7 +224,7 @@ private fun RocketListContent(
                     )
                     if (index < rockets.lastIndex) {
                         HorizontalDivider(
-                            color = MaterialTheme.colorScheme.background,
+                            color = MaterialTheme.colorScheme.background, // Or another suitable divider color
                             thickness = 2.dp,
                             modifier = Modifier.padding(start = 16.dp)
                         )
@@ -223,13 +246,13 @@ private fun EmptyState() {
     ) {
         Icon(
             imageVector = Icons.Default.SearchOff,
-            contentDescription = null,
+            contentDescription = null, // "No rockets found icon"
             modifier = Modifier.size(48.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = stringResource(R.string.no_rockets_found),
+            text = stringResource(R.string.no_rockets_found), // String resource: "No rockets found"
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -250,17 +273,20 @@ private fun RocketsListItem(
     ) {
         Icon(
             imageVector = ImageVector.vectorResource(id = R.drawable.rocket),
-            contentDescription = null,
+            contentDescription = null, // Add description for accessibility if appropriate, e.g., "Rocket icon"
             modifier = Modifier
                 .size(40.dp)
                 .padding(end = 16.dp),
-            tint = Color.Unspecified
+            tint = Color.Unspecified // If the icon has its own colors, otherwise consider MaterialTheme.colorScheme.primary
         )
         RocketInfo(rocket = rocket, modifier = Modifier.weight(1f))
         Icon(
             imageVector = Icons.Filled.ChevronRight,
-            contentDescription = null,
-            tint = Color.Gray,
+            contentDescription = stringResource(
+                R.string.cd_navigate_to_details,
+                rocket.name
+            ), // Accessibility description, e.g., "Navigate to ${rocket.name} details"
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(24.dp)
         )
     }
@@ -269,7 +295,7 @@ private fun RocketsListItem(
 @Composable
 private fun RocketInfo(rocket: RocketListItemModel, modifier: Modifier) {
     Column(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(), // modifier is already applied to Column
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
@@ -279,85 +305,58 @@ private fun RocketInfo(rocket: RocketListItemModel, modifier: Modifier) {
             overflow = TextOverflow.Ellipsis
         )
         Text(
-            text = "${stringResource(id = R.string.label_first_flight)} ${rocket.firstFlight}",
+            text = "${stringResource(id = R.string.label_first_flight)} ${rocket.firstFlight}", // String resource: "First flight:"
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
 
+
+val previewRockets = listOf(
+    RocketListItemModel(
+        id = "1", name = "Falcon 9", firstFlight = "2010-06-04",
+        height = 70.0, diameter = 3.7, mass = 549054
+    ),
+    RocketListItemModel(
+        id = "2", name = "Falcon Heavy", firstFlight = "2018-02-06",
+        height = 70.0, diameter = 12.2, mass = 1420788
+    ),
+    RocketListItemModel(
+        id = "3", name = "Starship", firstFlight = "2023-04-20",
+        height = 120.0, diameter = 9.0, mass = 5000000
+    )
+)
+
+val previewAvailableFilters = listOf(
+    FilterItem(
+        key = "name", displayName = "Name",
+        values = listOf("Falcon 9", "Falcon Heavy", "Starship")
+    ),
+    FilterItem(
+        key = "first_flight", displayName = "First Flight",
+        values = listOf("Before 2015", "2015-2020", "After 2020")
+    )
+)
+
 @ThemeModePreview
 @FontScalePreview
 @DeviceFormatPreview
 @Composable
-private fun RocketsListScreenPreview() {
+private fun RocketsListScreenPreview_DataLoaded() {
     TemplateTheme {
         RocketsListContent(
-            state = UpdateSuccess(
-                rockets = listOf(
-                    RocketListItemModel(
-                        id = "1",
-                        name = "Falcon 9",
-                        firstFlight = "2010-06-04",
-                        height = 70.0,
-                        diameter = 3.7,
-                        mass = 549054
-                    ),
-                    RocketListItemModel(
-                        id = "2",
-                        name = "Falcon Heavy",
-                        firstFlight = "2018-02-06",
-                        height = 70.0,
-                        diameter = 12.2,
-                        mass = 1420788
-                    ),
-                    RocketListItemModel(
-                        id = "3",
-                        name = "Starship",
-                        firstFlight = "2023-04-20",
-                        height = 120.0,
-                        diameter = 9.0,
-                        mass = 5000000
-                    )
-                ),
-                filteredRockets = listOf(
-                    RocketListItemModel(
-                        id = "1",
-                        name = "Falcon 9",
-                        firstFlight = "2010-06-04",
-                        height = 70.0,
-                        diameter = 3.7,
-                        mass = 549054
-                    ),
-                    RocketListItemModel(
-                        id = "2",
-                        name = "Falcon Heavy",
-                        firstFlight = "2018-02-06",
-                        height = 70.0,
-                        diameter = 12.2,
-                        mass = 1420788
-                    )
+            state = RocketsListContract.State(
+                isLoading = false,
+                rockets = previewRockets,
+                filteredRockets = previewRockets.take(2),
+                availableFilters = previewAvailableFilters,
+                searchQuery = "",
+                activeFilters = FilterState(
+                    selectedFilters = mapOf("name" to setOf("Falcon 9"))
                 )
             ),
-            drawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
-            searchQuery = "",
-            activeFilters = FilterState(),
-            availableFilters = listOf(
-                FilterItem(
-                    key = "name",
-                    displayName = "Name",
-                    values = listOf("Falcon 9", "Falcon Heavy", "Starship")
-                ),
-                FilterItem(
-                    key = "first_flight",
-                    displayName = "First Flight",
-                    values = listOf("Before 2015", "2015-2020", "After 2020")
-                )
-            ),
-            onDetailsClicked = {},
-            onRefresh = {},
-            onSearchTextChange = {},
-            onFilterSelected = {}
+            onIntent = {}
         )
     }
 }
@@ -366,18 +365,11 @@ private fun RocketsListScreenPreview() {
 @FontScalePreview
 @DeviceFormatPreview
 @Composable
-private fun ErrorStatePreview() {
+private fun RocketsListScreenPreview_Loading() {
     TemplateTheme {
         RocketsListContent(
-            state = DataError,
-            drawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
-            searchQuery = "",
-            activeFilters = FilterState(),
-            availableFilters = emptyList(),
-            onDetailsClicked = {},
-            onRefresh = {},
-            onSearchTextChange = {},
-            onFilterSelected = {}
+            state = RocketsListContract.State(isLoading = true),
+            onIntent = {}
         )
     }
 }
@@ -386,21 +378,33 @@ private fun ErrorStatePreview() {
 @FontScalePreview
 @DeviceFormatPreview
 @Composable
-private fun EmptyStatePreview() {
+private fun RocketsListScreenPreview_Error() {
+    val context = LocalContext.current
     TemplateTheme {
         RocketsListContent(
-            state = UpdateSuccess(
-                rockets = emptyList(),
-                filteredRockets = emptyList()
+            state = RocketsListContract.State(
+                isLoading = false,
+                error = context.getString(R.string.data_error)
             ),
-            drawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
-            searchQuery = "Non-existent rocket",
-            activeFilters = FilterState(),
-            availableFilters = emptyList(),
-            onDetailsClicked = {},
-            onRefresh = {},
-            onSearchTextChange = {},
-            onFilterSelected = {}
+            onIntent = {}
+        )
+    }
+}
+
+@ThemeModePreview
+@FontScalePreview
+@DeviceFormatPreview
+@Composable
+private fun RocketsListScreenPreview_Empty() {
+    TemplateTheme {
+        RocketsListContent(
+            state = RocketsListContract.State(
+                isLoading = false,
+                rockets = emptyList(), // Important for EmptyState logic in RocketDataContent
+                filteredRockets = emptyList(),
+                searchQuery = "Non-existent rocket"
+            ),
+            onIntent = {}
         )
     }
 }
