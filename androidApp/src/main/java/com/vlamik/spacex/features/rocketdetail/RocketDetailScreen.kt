@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -28,8 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
+import coil3.compose.AsyncImage
 import com.vlamik.core.domain.models.RocketDetailModel
 import com.vlamik.core.domain.models.StageDetailModel
 import com.vlamik.spacex.R
@@ -40,6 +38,7 @@ import com.vlamik.spacex.core.utils.preview.DeviceFormatPreview
 import com.vlamik.spacex.core.utils.preview.FontScalePreview
 import com.vlamik.spacex.core.utils.preview.ThemeModePreview
 import com.vlamik.spacex.theme.PinkShade
+import com.vlamik.spacex.theme.Shapes
 import com.vlamik.spacex.theme.SoftGray
 import com.vlamik.spacex.theme.TemplateTheme
 
@@ -144,7 +143,7 @@ fun ParameterCard(value: String, label: String) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .background(color = PinkShade, shape = RoundedCornerShape(8.dp))
+            .background(color = PinkShade, shape = Shapes.medium)
             .padding(16.dp)
     ) {
         Text(
@@ -163,7 +162,7 @@ fun StageInfo(title: String, stage: StageDetailModel) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
-            .background(color = SoftGray, shape = RoundedCornerShape(8.dp))
+            .background(color = SoftGray, shape = Shapes.medium)
     ) {
         Text(
             text = title,
@@ -210,7 +209,6 @@ fun StageInfoRow(@DrawableRes drawableId: Int, value: String) {
     }
 }
 
-@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun RocketPhotos(rocketImageUrls: List<String>) {
     Text(
@@ -220,12 +218,12 @@ fun RocketPhotos(rocketImageUrls: List<String>) {
         modifier = Modifier.padding(16.dp)
     )
     rocketImageUrls.forEach { image ->
-        GlideImage(
+        AsyncImage(
             model = image,
             contentDescription = stringResource(id = R.string.rocket_image),
             modifier = Modifier
                 .padding(16.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(Shapes.medium)
                 .fillMaxWidth(),
             contentScale = ContentScale.Crop
         )
