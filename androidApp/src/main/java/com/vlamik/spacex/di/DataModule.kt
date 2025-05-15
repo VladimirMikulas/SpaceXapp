@@ -7,6 +7,10 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.vlamik.core.commons.ApiUrl
 import com.vlamik.core.commons.endpoints.OpenLibraryEndpoint
+import com.vlamik.core.data.network.CrewApi
+import com.vlamik.core.data.network.CrewKtorApi
+import com.vlamik.core.data.network.RocketsApi
+import com.vlamik.core.data.network.RocketsKtorApi
 import com.vlamik.core.data.repositories.AppRepository
 import com.vlamik.core.data.repositories.AppRepositoryImpl
 import com.vlamik.core.data.repositories.CrewRepository
@@ -67,6 +71,22 @@ open class DataModule {
         repo: CrewRepositoryImpl
     ): CrewRepository {
         return repo
+    }
+
+    @Provides
+    @Singleton
+    fun providesRocketsAPI(
+        api: RocketsKtorApi
+    ): RocketsApi {
+        return api
+    }
+
+    @Provides
+    @Singleton
+    fun providesCrewAPI(
+        api: CrewKtorApi
+    ): CrewApi {
+        return api
     }
 
     companion object {
