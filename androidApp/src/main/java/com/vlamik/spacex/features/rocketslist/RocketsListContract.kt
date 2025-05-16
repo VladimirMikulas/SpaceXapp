@@ -4,6 +4,7 @@ package com.vlamik.spacex.features.rocketslist
 import com.vlamik.core.domain.models.RocketListItemModel
 import com.vlamik.spacex.component.appbars.models.FilterState
 import com.vlamik.spacex.core.filtering.FilterItem
+import com.vlamik.spacex.core.utils.UiText
 import com.vlamik.spacex.navigation.NavRoutes
 
 object RocketsListContract {
@@ -17,10 +18,7 @@ object RocketsListContract {
         val searchQuery: String = "",
         val activeFilters: FilterState = FilterState(),
         val availableFilters: List<FilterItem> = emptyList(),
-        val error: String? = null, // Or a specific error type
-        // The following are for one-time events, which might be better managed via Effects,
-        // but for simplicity, we can start them here or directly in Effects.
-        // For this example, we'll use Effects for navigation and drawer.
+        val error: UiText? = null,
     )
 
     // Intent: Represents user actions or UI events
@@ -32,8 +30,8 @@ object RocketsListContract {
         data class RocketClicked(val rocketId: String) : Intent
         data class NavigateTo(val route: NavRoutes) : Intent
         data object DrawerMenuClicked : Intent
-        data object RetryLoadRockets : Intent // Added for ErrorState
-        data object ConsumeError : Intent // To clear the error after it's been shown
+        data object RetryLoadRockets : Intent
+        data object ConsumeError : Intent
     }
 
     // Effect: Represents one-time events (navigation, showing Toast/Snackbar, opening drawer)
@@ -41,6 +39,5 @@ object RocketsListContract {
         data class NavigateToRoute(val route: NavRoutes) : Effect
         data class OpenRocketDetails(val rocketId: String) : Effect
         data object OpenDrawer : Effect
-        // We could also add data object CloseDrawer : Effect if the VM needed to explicitly manage it
     }
 }

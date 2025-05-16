@@ -1,79 +1,33 @@
 package com.vlamik.spacex.core.filtering
 
-import android.content.Context
-import com.vlamik.spacex.R
-import java.text.DecimalFormat
-import java.util.Locale
-
 object RangeFilter {
+    /**
+     * Checks if a given numerical value falls within any of the selected ranges.
+     * @param value The numerical value to check.
+     * @param selectedRanges The set of selected FilterValue.Range objects.
+     * @return True if the value falls within at least one of the selected ranges, otherwise False.
+     * No longer uses Context.
+     */
     fun matches(
         value: Double,
-        selectedRanges: Set<String>,
-        context: Context
+        selectedRanges: Set<FilterValue.Range>
     ): Boolean {
         if (selectedRanges.isEmpty()) return true
 
-        return selectedRanges.any { range ->
+        return selectedRanges.any { rangeValue ->
             when {
-                isUnderRange(range, context) -> handleUnderRange(range, value, context)
-                isOverRange(range, context) -> handleOverRange(range, value, context)
-                isRangeFormat(range, context) -> handleRange(range, value, context)
+                // If FilterValue defines both start and end (represents an "from - to" range)
+                rangeValue.start != null && rangeValue.end != null ->
+                    value >= rangeValue.start && value <= rangeValue.end
+                // If FilterValue defines only start (represents an "over" range)
+                rangeValue.start != null ->
+                    value >= rangeValue.start
+                // If FilterValue defines only end (represents an "under" range)
+                rangeValue.end != null ->
+                    value <= rangeValue.end
+                // Other case (should not happen with correct FilterValue)
                 else -> false
             }
-        }
-    }
-
-    private fun isUnderRange(range: String, context: Context): Boolean {
-        val prefix = context.getString(R.string.filter_under, "").replace("%s", "").trim()
-        return range.startsWith(prefix)
-    }
-
-    private fun isOverRange(range: String, context: Context): Boolean {
-        val prefix = context.getString(R.string.filter_over, "").replace("%s", "").trim()
-        return range.startsWith(prefix)
-    }
-
-    private fun isRangeFormat(range: String, context: Context): Boolean {
-        val separator = context.getString(R.string.filter_range_separator)
-        return separator in range
-    }
-
-    private fun parseNumber(str: String): Double? {
-        return try {
-            val cleanStr = str.replace("[^\\d.]".toRegex(), "")
-            DecimalFormat.getInstance(Locale.US).parse(cleanStr)?.toDouble()
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    private fun handleUnderRange(range: String, value: Double, context: Context): Boolean {
-        val numberStr = range.removePrefix(context.getString(R.string.filter_under))
-        val number = numberStr.trim()
-            .removeSuffix(context.getString(R.string.unit_meters))
-            .trim()
-            .toDoubleOrNull() ?: return false
-
-        return value <= number
-    }
-
-    private fun handleOverRange(range: String, value: Double, context: Context): Boolean {
-        val numberStr = range.removePrefix(context.getString(R.string.filter_over))
-        val number = parseNumber(numberStr)
-        return number?.let { value > it } ?: false
-    }
-
-    private fun handleRange(range: String, value: Double, context: Context): Boolean {
-        val parts = range.split(context.getString(R.string.filter_range_separator))
-        if (parts.size != 2) return false
-
-        val start = parseNumber(parts[0])
-        val end = parseNumber(parts[1])
-
-        return if (start != null && end != null) {
-            value >= start && value <= end
-        } else {
-            false
         }
     }
 }

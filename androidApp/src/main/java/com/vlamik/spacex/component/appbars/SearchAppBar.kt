@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -47,7 +48,6 @@ import androidx.compose.ui.unit.sp
 import com.vlamik.spacex.R
 import com.vlamik.spacex.component.appbars.models.FilterParameter
 import com.vlamik.spacex.component.appbars.models.FilterState
-
 
 @Composable
 fun SearchAppBar(
@@ -108,8 +108,9 @@ private fun SearchModeContent(
     onBackClick: () -> Unit,
     focusRequester: FocusRequester
 ) {
+    val context = LocalContext.current
+
     Column {
-        // Search Row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -119,7 +120,7 @@ private fun SearchModeContent(
             IconButton(onClick = onBackClick) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back"
+                    contentDescription = stringResource(R.string.back)
                 )
             }
 
@@ -155,45 +156,55 @@ private fun SearchModeContent(
                 .padding(horizontal = 16.dp, vertical = 4.dp)
                 .heightIn(max = maxFilterHeight)
         ) {
-            filters.forEach { filter ->
-                item {
-                    Text(
-                        text = filter.displayName,
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
+            items(filters) { filter ->
+                Text(
+                    text = filter.displayName.asString(context),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
 
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    ) {
-                        items(filter.values) { value ->
-                            val isSelected =
-                                activeFilters.selectedFilters[filter.key]?.contains(value) == true
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = {
-                                    val updated = activeFilters.selectedFilters.toMutableMap()
-                                    updated[filter.key] = updated[filter.key]?.let {
-                                        if (isSelected) it - value else it + value
-                                    } ?: setOf(value)
-                                    onFilterSelected(activeFilters.copy(selectedFilters = updated))
-                                },
-                                label = { Text(value) },
-                                shape = RoundedCornerShape(16.dp),
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                )
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                ) {
+                    items(filter.values) { filterValue ->
+                        val isSelected =
+                            activeFilters.selectedFilters[filter.key]?.contains(filterValue) == true
+
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = {
+                                val updatedSelectedFilters =
+                                    activeFilters.selectedFilters.toMutableMap()
+                                val currentSelectedValues =
+                                    updatedSelectedFilters[filter.key]?.toMutableSet()
+                                        ?: mutableSetOf()
+
+                                if (isSelected) {
+                                    currentSelectedValues.remove(filterValue)
+                                } else {
+                                    currentSelectedValues.add(filterValue)
+                                }
+                                updatedSelectedFilters[filter.key] = currentSelectedValues.toSet()
+
+                                onFilterSelected(activeFilters.copy(selectedFilters = updatedSelectedFilters.toMap()))
+                            },
+                            label = { Text(filterValue.displayName.asString(context)) },
+                            shape = RoundedCornerShape(16.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
                             )
-                        }
+                        )
                     }
                 }
+                HorizontalDivider()
             }
         }
     }
 }
+
 
 @Composable
 private fun NormalModeContent(

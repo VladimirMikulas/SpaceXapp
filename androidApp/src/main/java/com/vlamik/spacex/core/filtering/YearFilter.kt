@@ -1,34 +1,34 @@
 package com.vlamik.spacex.core.filtering
 
-import android.content.Context
-import com.vlamik.spacex.R
-
 object YearFilter {
+    /**
+     * Checks if the year from a given date string falls within any of the selected year ranges.
+     * @param date The date string.
+     * @param selectedRanges The set of selected FilterValue.YearRange objects.
+     * @return True if the year falls within at least one of the selected ranges, otherwise False.
+     * No longer uses Context for filtering logic.
+     */
     fun matches(
         date: String,
-        selectedRanges: Set<String>,
-        context: Context
+        selectedRanges: Set<FilterValue.YearRange> // Accepting Set<FilterValue.YearRange>
     ): Boolean {
-        val year = FilterUtils.extractYear(date) ?: return false
+        val year = FilterUtils.extractYear(date)
+            ?: return false // Still need to extract the year using FilterUtils
         if (selectedRanges.isEmpty()) return true
 
-        return selectedRanges.any { range ->
+        return selectedRanges.any { yearRangeValue ->
+            // Use the values from the FilterValue.YearRange object
             when {
-                range.startsWith(context.getString(R.string.filter_before).split("%s")[0]) ->
-                    year < (range.substringAfter(" ").toIntOrNull() ?: Int.MAX_VALUE)
-
-                range.startsWith(context.getString(R.string.filter_after).split("%s")[0]) ->
-                    year > (range.substringAfter(" ").toIntOrNull() ?: Int.MIN_VALUE)
-
-                range.contains(context.getString(R.string.filter_range).split("%s")[0]) -> {
-                    val parts = range.split("-")
-                    if (parts.size == 2) {
-                        val start = parts[0].toIntOrNull() ?: Int.MIN_VALUE
-                        val end = parts[1].toIntOrNull() ?: Int.MAX_VALUE
-                        year in start..end
-                    } else false
-                }
-
+                // If FilterValue defines both startYear and endYear (represents an "from - to" range)
+                yearRangeValue.startYear != null && yearRangeValue.endYear != null ->
+                    year >= yearRangeValue.startYear && year <= yearRangeValue.endYear
+                // If FilterValue defines only startYear (represents an "after year" range)
+                yearRangeValue.startYear != null ->
+                    year >= yearRangeValue.startYear
+                // If FilterValue defines only endYear (represents a "before year" range)
+                yearRangeValue.endYear != null ->
+                    year <= yearRangeValue.endYear
+                // Other case (should not happen with correct FilterValue)
                 else -> false
             }
         }
