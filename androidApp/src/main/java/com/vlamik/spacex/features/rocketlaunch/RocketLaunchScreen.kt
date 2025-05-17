@@ -40,10 +40,10 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.vlamik.spacex.R
+import com.vlamik.spacex.common.utils.preview.DeviceFormatPreview
+import com.vlamik.spacex.common.utils.preview.FontScalePreview
+import com.vlamik.spacex.common.utils.preview.ThemeModePreview
 import com.vlamik.spacex.component.appbars.SpaceXAppBar
-import com.vlamik.spacex.core.utils.preview.DeviceFormatPreview
-import com.vlamik.spacex.core.utils.preview.FontScalePreview
-import com.vlamik.spacex.core.utils.preview.ThemeModePreview
 import com.vlamik.spacex.features.rocketlaunch.RocketLaunchViewModel.LaunchRocketState
 import com.vlamik.spacex.theme.TemplateTheme
 

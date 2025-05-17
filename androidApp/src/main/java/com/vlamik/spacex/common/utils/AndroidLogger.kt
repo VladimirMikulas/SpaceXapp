@@ -1,4 +1,4 @@
-package com.vlamik.spacex.core.utils
+package com.vlamik.spacex.common.utils
 
 import com.vlamik.core.commons.Log
 

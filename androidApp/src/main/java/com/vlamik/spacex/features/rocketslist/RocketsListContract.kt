@@ -2,9 +2,9 @@ package com.vlamik.spacex.features.rocketslist
 
 
 import com.vlamik.core.domain.models.RocketListItemModel
-import com.vlamik.spacex.component.appbars.models.FilterState
-import com.vlamik.spacex.core.filtering.FilterItem
-import com.vlamik.spacex.core.utils.UiText
+import com.vlamik.spacex.common.filtering.FilterItem
+import com.vlamik.spacex.common.filtering.FilterState
+import com.vlamik.spacex.common.utils.UiText
 import com.vlamik.spacex.navigation.NavRoutes
 
 object RocketsListContract {

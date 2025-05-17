@@ -3,8 +3,8 @@ package com.vlamik.spacex.features.rocketdetail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.vlamik.core.domain.GetRocketDetail
 import com.vlamik.core.domain.models.RocketDetailModel
+import com.vlamik.core.domain.usecase.GetRocketDetailUseCase
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 
 class RocketDetailViewModel @AssistedInject constructor(
     @Assisted rocketId: String,
-    getRocketDetail: GetRocketDetail,
+    getRocketDetailUseCase: GetRocketDetailUseCase,
 ) : ViewModel() {
 
     private val _updateState =
@@ -23,7 +23,7 @@ class RocketDetailViewModel @AssistedInject constructor(
 
     init {
         viewModelScope.launch {
-            getRocketDetail(rocketId)
+            getRocketDetailUseCase(rocketId)
                 .onSuccess { _updateState.value = UiState.Success(it) }
                 .onFailure { _updateState.value = UiState.DataError }
         }

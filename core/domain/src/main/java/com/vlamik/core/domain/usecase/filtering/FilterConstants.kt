@@ -1,4 +1,4 @@
-package com.vlamik.spacex.core.filtering
+package com.vlamik.core.domain.usecase.filtering
 
 object FilterConstants {
     // Filter Keys

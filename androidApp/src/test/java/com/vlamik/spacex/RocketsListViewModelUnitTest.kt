@@ -8,8 +8,8 @@ import com.vlamik.core.data.models.Mass
 import com.vlamik.core.data.models.RocketDto
 import com.vlamik.core.data.models.SecondStage
 import com.vlamik.core.data.repositories.RocketsRepository
-import com.vlamik.core.domain.GetRocketsList
 import com.vlamik.core.domain.models.RocketListItemModel
+import com.vlamik.core.domain.usecase.GetRocketsListUseCase
 import com.vlamik.spacex.features.rocketslist.RocketsListViewModel
 import io.mockk.coEvery
 import io.mockk.every
@@ -37,7 +37,7 @@ class RocketsListViewModelUnitTest {
     val coroutineRule = MainCoroutineRule()
 
     private val mockRepository = mockk<RocketsRepository>()
-    private val getRocketsList = GetRocketsList(mockRepository)
+    private val getRocketsListUseCase = GetRocketsListUseCase(mockRepository)
     private val mockContext = mockk<Context> {
         every { getString(any()) } returns "test" // Mock string resources
     }
@@ -47,7 +47,7 @@ class RocketsListViewModelUnitTest {
     fun setup() {
         // Configure default mock response for all getRockets calls
         coEvery { mockRepository.getRockets(any()) } returns Result.success(emptyList())
-        viewModel = RocketsListViewModel(getRocketsList, mockContext)
+        viewModel = RocketsListViewModel(getRocketsListUseCase, mockContext)
     }
 
     @Test
@@ -58,7 +58,7 @@ class RocketsListViewModelUnitTest {
             Result.success(emptyList())
         }
 
-        val testViewModel = RocketsListViewModel(getRocketsList, mockContext)
+        val testViewModel = RocketsListViewModel(getRocketsListUseCase, mockContext)
 
         // Assert immediately after creation
         assertEquals(RocketsListViewModel.ListScreenUiState.LoadingData, testViewModel.state.value)
@@ -97,7 +97,7 @@ class RocketsListViewModelUnitTest {
         coEvery { mockRepository.getRockets(any()) } returns Result.success(rockets.map { it.toRocketDto() })
 
         // 2. Create fresh ViewModel for this test
-        val testViewModel = RocketsListViewModel(getRocketsList, mockContext)
+        val testViewModel = RocketsListViewModel(getRocketsListUseCase, mockContext)
 
         // 3. Wait for initial data load
         advanceUntilIdle()

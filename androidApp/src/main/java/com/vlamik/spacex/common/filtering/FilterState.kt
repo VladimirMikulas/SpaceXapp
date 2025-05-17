@@ -1,6 +1,4 @@
-package com.vlamik.spacex.component.appbars.models
-
-import com.vlamik.spacex.core.filtering.FilterValue
+package com.vlamik.spacex.common.filtering
 
 /**
  * Data class representing the current state of selected filters.

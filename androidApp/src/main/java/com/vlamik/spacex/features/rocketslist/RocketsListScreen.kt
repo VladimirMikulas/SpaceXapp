@@ -36,24 +36,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.vlamik.core.domain.models.RocketListItemModel
 import com.vlamik.spacex.R
+import com.vlamik.spacex.common.filtering.FilterItem
+import com.vlamik.spacex.common.filtering.FilterState
+import com.vlamik.spacex.common.filtering.FilterValue
+import com.vlamik.spacex.common.utils.UiText
+import com.vlamik.spacex.common.utils.asString
+import com.vlamik.spacex.common.utils.preview.DeviceFormatPreview
+import com.vlamik.spacex.common.utils.preview.FontScalePreview
+import com.vlamik.spacex.common.utils.preview.ThemeModePreview
 import com.vlamik.spacex.component.LoadingIndicator
 import com.vlamik.spacex.component.appbars.SearchAppBar
-import com.vlamik.spacex.component.appbars.models.FilterParameter
-import com.vlamik.spacex.component.appbars.models.FilterState
 import com.vlamik.spacex.component.drawer.AppDrawer
-import com.vlamik.spacex.core.filtering.FilterItem
-import com.vlamik.spacex.core.filtering.FilterValue
-import com.vlamik.spacex.core.utils.UiText
-import com.vlamik.spacex.core.utils.preview.DeviceFormatPreview
-import com.vlamik.spacex.core.utils.preview.FontScalePreview
-import com.vlamik.spacex.core.utils.preview.ThemeModePreview
 import com.vlamik.spacex.navigation.NavRoutes
 import com.vlamik.spacex.theme.SoftGray
 import com.vlamik.spacex.theme.TemplateTheme
@@ -106,14 +105,6 @@ private fun RocketsListContent(
     state: RocketsListContract.State,
     onIntent: (RocketsListContract.Intent) -> Unit
 ) {
-    // Map FilterItem from ViewModel state to UI-specific FilterParameter
-    val filterParameters = state.availableFilters.map { filterItem ->
-        FilterParameter(
-            key = filterItem.key,
-            displayName = filterItem.displayName,
-            values = filterItem.values
-        )
-    }
 
     Scaffold(
         topBar = {
@@ -121,7 +112,7 @@ private fun RocketsListContent(
                 title = stringResource(R.string.rockets),
                 searchText = state.searchQuery,
                 activeFilters = state.activeFilters,
-                filters = filterParameters,
+                filters = state.availableFilters,
                 onSearchTextChange = { query ->
                     onIntent(
                         RocketsListContract.Intent.SearchQueryChanged(
@@ -180,7 +171,6 @@ private fun RocketsListContent(
 
 @Composable
 private fun ErrorState(errorMessage: UiText, onRetry: () -> Unit) {
-    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -189,7 +179,7 @@ private fun ErrorState(errorMessage: UiText, onRetry: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = errorMessage.asString(context),
+            text = errorMessage.asString(),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.error
         )

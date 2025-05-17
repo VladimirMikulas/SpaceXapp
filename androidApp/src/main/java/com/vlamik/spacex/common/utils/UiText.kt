@@ -1,4 +1,4 @@
-package com.vlamik.spacex.core.utils
+package com.vlamik.spacex.common.utils
 
 import android.content.Context
 import androidx.annotation.StringRes

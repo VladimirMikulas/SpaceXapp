@@ -1,4 +1,4 @@
-package com.vlamik.spacex.core.utils.preview
+package com.vlamik.spacex.common.utils.preview
 
 import android.content.res.Configuration.UI_MODE_NIGHT_NO
 import android.content.res.Configuration.UI_MODE_NIGHT_YES

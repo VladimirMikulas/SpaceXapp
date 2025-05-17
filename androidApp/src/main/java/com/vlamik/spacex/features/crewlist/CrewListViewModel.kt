@@ -2,8 +2,8 @@ package com.vlamik.spacex.features.crewlist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.vlamik.core.domain.GetCrewList
 import com.vlamik.core.domain.models.CrewListItemModel
+import com.vlamik.core.domain.usecase.GetCrewListUseCase
 import com.vlamik.spacex.features.crewlist.CrewListViewModel.ListScreenUiState.DataError
 import com.vlamik.spacex.features.crewlist.CrewListViewModel.ListScreenUiState.LoadingData
 import com.vlamik.spacex.features.crewlist.CrewListViewModel.ListScreenUiState.UpdateSuccess
@@ -16,7 +16,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CrewListViewModel @Inject constructor(
-    private val getCrewList: GetCrewList
+    private val getCrewListUseCase: GetCrewListUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<ListScreenUiState>(LoadingData)
@@ -29,7 +29,7 @@ class CrewListViewModel @Inject constructor(
     private fun loadCrew() {
         viewModelScope.launch {
             _state.value = LoadingData
-            getCrewList()
+            getCrewListUseCase()
                 .onSuccess { crew ->
                     _state.value = UpdateSuccess(crew)
                 }

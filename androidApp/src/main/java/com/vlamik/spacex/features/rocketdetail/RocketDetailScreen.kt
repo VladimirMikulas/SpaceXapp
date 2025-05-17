@@ -31,12 +31,12 @@ import coil3.compose.AsyncImage
 import com.vlamik.core.domain.models.RocketDetailModel
 import com.vlamik.core.domain.models.StageDetailModel
 import com.vlamik.spacex.R
+import com.vlamik.spacex.common.utils.preview.DeviceFormatPreview
+import com.vlamik.spacex.common.utils.preview.FontScalePreview
+import com.vlamik.spacex.common.utils.preview.ThemeModePreview
 import com.vlamik.spacex.component.ErrorMessage
 import com.vlamik.spacex.component.LoadingIndicator
 import com.vlamik.spacex.component.appbars.SpaceXAppBar
-import com.vlamik.spacex.core.utils.preview.DeviceFormatPreview
-import com.vlamik.spacex.core.utils.preview.FontScalePreview
-import com.vlamik.spacex.core.utils.preview.ThemeModePreview
 import com.vlamik.spacex.theme.PinkShade
 import com.vlamik.spacex.theme.Shapes
 import com.vlamik.spacex.theme.SoftGray

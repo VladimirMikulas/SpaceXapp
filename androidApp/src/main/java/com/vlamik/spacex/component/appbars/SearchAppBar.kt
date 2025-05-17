@@ -46,15 +46,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vlamik.spacex.R
-import com.vlamik.spacex.component.appbars.models.FilterParameter
-import com.vlamik.spacex.component.appbars.models.FilterState
+import com.vlamik.spacex.common.filtering.FilterItem
+import com.vlamik.spacex.common.filtering.FilterState
 
 @Composable
 fun SearchAppBar(
     title: String,
     searchText: String,
     activeFilters: FilterState,
-    filters: List<FilterParameter>,
+    filters: List<FilterItem>,
     onSearchTextChange: (String) -> Unit,
     onFilterSelected: (FilterState) -> Unit,
     onMenuClick: () -> Unit,
@@ -102,7 +102,7 @@ fun SearchAppBar(
 private fun SearchModeContent(
     searchText: String,
     activeFilters: FilterState,
-    filters: List<FilterParameter>,
+    filters: List<FilterItem>,
     onTextChange: (String) -> Unit,
     onFilterSelected: (FilterState) -> Unit,
     onBackClick: () -> Unit,

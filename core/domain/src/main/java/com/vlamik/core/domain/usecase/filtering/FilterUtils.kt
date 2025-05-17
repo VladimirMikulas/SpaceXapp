@@ -1,4 +1,4 @@
-package com.vlamik.spacex.core.filtering
+package com.vlamik.core.domain.usecase.filtering
 
 
 import com.vlamik.core.domain.models.datePattern
@@ -54,7 +54,7 @@ object FilterUtils {
     fun extractYear(date: String): Int? {
         return try {
             DateTimeFormatter.ofPattern(datePattern)
-                .parse(date)?.get(ChronoField.YEAR)
+                .parse(date).get(ChronoField.YEAR)
         } catch (e: Exception) {
             null
         }

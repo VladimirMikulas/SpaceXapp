@@ -1,6 +1,6 @@
-package com.vlamik.spacex.core.filtering
+package com.vlamik.spacex.common.filtering
 
-import com.vlamik.spacex.core.utils.UiText
+import com.vlamik.spacex.common.utils.UiText
 
 /**
  * Data class representing one type of filter (e.g., "Height", "First Flight").

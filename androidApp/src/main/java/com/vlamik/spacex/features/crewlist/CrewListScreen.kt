@@ -1,7 +1,6 @@
 package com.vlamik.spacex.features.crewlist
 
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -42,13 +41,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.vlamik.core.domain.models.CrewListItemModel
 import com.vlamik.spacex.R
+import com.vlamik.spacex.common.utils.preview.DeviceFormatPreview
+import com.vlamik.spacex.common.utils.preview.FontScalePreview
+import com.vlamik.spacex.common.utils.preview.ThemeModePreview
 import com.vlamik.spacex.component.appbars.SectionAppBar
 import com.vlamik.spacex.component.drawer.AppDrawer
-import com.vlamik.spacex.core.utils.preview.DeviceFormatPreview
-import com.vlamik.spacex.core.utils.preview.FontScalePreview
-import com.vlamik.spacex.core.utils.preview.ThemeModePreview
 import com.vlamik.spacex.features.crewlist.CrewListViewModel.ListScreenUiState
 import com.vlamik.spacex.features.crewlist.CrewListViewModel.ListScreenUiState.DataError
 import com.vlamik.spacex.features.crewlist.CrewListViewModel.ListScreenUiState.LoadingData
@@ -230,7 +230,7 @@ private fun rememberWikipediaOpener(): (String) -> Unit {
     return remember(context) {
         { url: String ->
             try {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                val intent = Intent(Intent.ACTION_VIEW, url.toUri())
                 context.startActivity(intent)
             } catch (e: Exception) {
                 // Error handling
