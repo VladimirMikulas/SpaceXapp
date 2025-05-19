@@ -3,7 +3,7 @@ sdk-compile = "35"
 sdk-target = "35"
 sdk-min = "26"
 
-gradle-android = "8.8.2"
+gradle-android = "8.10.0"
 gradle-versions = "0.43.0"
 
 compose = "1.7.8"
