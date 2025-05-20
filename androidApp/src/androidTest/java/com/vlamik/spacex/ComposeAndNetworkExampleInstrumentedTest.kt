@@ -73,7 +73,7 @@ class ComposeAndNetworkExampleInstrumentedTest {
     }
 
     @Test
-    fun listNewsError() {
+    fun listRocketsError() {
         MockOpenLibraryApi.giveResponse(
             request = "${OpenLibraryEndpoint.baseUrl}/${OpenLibraryEndpoint.allRockets}",
             response = MockOpenLibraryApi.ResponseValue(
