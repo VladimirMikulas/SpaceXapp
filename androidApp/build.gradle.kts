@@ -7,6 +7,7 @@ plugins {
     id(libs.plugins.hilt.android.get().pluginId)
     id("template.coroutines")
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.apollo)
 }
 fun getLocalProperty(key: String): String? {
     val properties = Properties()
@@ -126,4 +127,14 @@ dependencies {
     testImplementation(libs.androidx.junit.ktx)
     testImplementation(libs.mockk.agent)
     testImplementation(libs.mockk.android)
+
+    apollo {
+        service("service") {
+            packageName.set("com.vlamik.spacex")
+            introspection {
+                schemaFile.set(file("core/data/src/main/java/com/vlamik/core/data/models/graphql/schema.graphqls/schema.graphqls"))
+                endpointUrl.set("https://main--spacex-l4uc6p.apollographos.net/graphql ")
+            }
+        }
+    }
 }
