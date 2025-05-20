@@ -16,9 +16,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -37,6 +43,8 @@ fun SpaceXAppBar(
     addLaunchButton: Boolean = false,
     launchButtonClickAction: (String) -> Unit = {}
 ) {
+    var navigationIconWidth by remember { mutableStateOf(0.dp) }
+    val density = LocalDensity.current
     Surface(
         modifier = modifier,
         shadowElevation = 4.dp,
@@ -58,7 +66,10 @@ fun SpaceXAppBar(
                 Row(
                     modifier = Modifier
                         .padding(start = 8.dp)
-                        .clickable(onClick = { backButtonClickAction() }),
+                        .clickable(onClick = { backButtonClickAction() })
+                        .onSizeChanged { size ->
+                            navigationIconWidth = with(density) { size.width.toDp() }
+                        },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
@@ -89,6 +100,8 @@ fun SpaceXAppBar(
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
+                } else {
+                    Spacer(modifier = Modifier.width(navigationIconWidth))
                 }
             },
             colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
