@@ -53,9 +53,12 @@ import com.vlamik.spacex.common.utils.asString
 
 /**
  * A dynamic app bar that switches between a normal display mode and an interactive search mode
- * with filters. Manages its own search state and focus.
+ * with filters. It manages its own `isSearching` state and focus.
  *
- * @param onFilterSelected Callback providing the entire updated [FilterState] when a filter changes.
+ * @param onSearchTextChange Callback when the search query changes.
+ * @param onFilterValueToggle Callback for individual filter chip toggles, providing the
+ * filter key, the specific filter value, and its new selection state.
+ * @param onMenuClick Callback for the menu icon click.
  */
 @Composable
 fun SearchAppBar(
@@ -64,16 +67,13 @@ fun SearchAppBar(
     activeFilters: FilterState,
     filters: List<FilterItem>,
     onSearchTextChange: (String) -> Unit,
-    onFilterSelected: (FilterState) -> Unit,
+    onFilterValueToggle: (filterKey: String, filterValue: FilterValue, isSelected: Boolean) -> Unit,
     onMenuClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Manages UI mode: true for search, false for normal.
     var isSearching by remember { mutableStateOf(false) }
-    // Requests focus for TextField when entering search mode.
     val focusRequester = remember { FocusRequester() }
 
-    // Requests focus for the search TextField when `isSearching` becomes true.
     LaunchedEffect(isSearching) {
         if (isSearching) {
             focusRequester.requestFocus()
@@ -88,22 +88,20 @@ fun SearchAppBar(
             modifier = Modifier.statusBarsPadding()
         ) {
             if (isSearching) {
-                // Displays search input and filter section.
                 SearchBarContent(
                     searchText = searchText,
                     activeFilters = activeFilters,
                     filters = filters,
                     onSearchTextChange = onSearchTextChange,
-                    onFilterSelected = onFilterSelected,
-                    onBackClick = { isSearching = false }, // Exits search mode.
+                    onFilterValueToggle = onFilterValueToggle,
+                    onBackClick = { isSearching = false },
                     focusRequester = focusRequester
                 )
             } else {
-                // Displays normal app bar.
                 NormalAppBarContent(
                     title = title,
                     onMenuClick = onMenuClick,
-                    onSearchClick = { isSearching = true } // Enters search mode.
+                    onSearchClick = { isSearching = true }
                 )
             }
         }
@@ -119,7 +117,7 @@ private fun SearchBarContent(
     activeFilters: FilterState,
     filters: List<FilterItem>,
     onSearchTextChange: (String) -> Unit,
-    onFilterSelected: (FilterState) -> Unit,
+    onFilterValueToggle: (filterKey: String, filterValue: FilterValue, isSelected: Boolean) -> Unit,
     onBackClick: () -> Unit,
     focusRequester: FocusRequester
 ) {
@@ -130,19 +128,17 @@ private fun SearchBarContent(
             onBackClick = onBackClick,
             focusRequester = focusRequester
         )
-        HorizontalDivider() // Separates search input from filters.
+        HorizontalDivider()
         FilterSection(
             filters = filters,
             activeFilters = activeFilters,
-            onFilterSelected = onFilterSelected
+            onFilterValueToggle = onFilterValueToggle
         )
     }
 }
 
 /**
  * Defines the search input row: back button, [TextField], and clear text button.
- *
- * @param focusRequester Attached to the [TextField] for programmatic focus control.
  */
 @Composable
 private fun SearchInputRow(
@@ -172,14 +168,13 @@ private fun SearchInputRow(
             modifier = Modifier
                 .weight(1f)
                 .focusRequester(focusRequester),
-            colors = TextFieldDefaults.colors( // Transparent TextField styling.
+            colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.Transparent,
                 unfocusedContainerColor = Color.Transparent,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent
             ),
             trailingIcon = {
-                // Shows clear button only if text is present.
                 if (searchText.isNotEmpty()) {
                     IconButton(onClick = { onSearchTextChange("") }) {
                         Icon(Icons.Default.Close, stringResource(R.string.clear))
@@ -194,16 +189,17 @@ private fun SearchInputRow(
 /**
  * Displays a scrollable list of filter categories and their chips.
  *
- * @param onFilterSelected Callback invoked with the updated [FilterState] after a chip selection.
+ * @param onFilterValueToggle Callback for individual filter chip toggles, providing the
+ * filter key, the specific filter value, and its new selection state.
  */
 @Composable
 private fun FilterSection(
     filters: List<FilterItem>,
     activeFilters: FilterState,
-    onFilterSelected: (FilterState) -> Unit,
+    onFilterValueToggle: (filterKey: String, filterValue: FilterValue, isSelected: Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val maxFilterHeight = 160.dp // Max height before scrolling.
+    val maxFilterHeight = 160.dp
     LazyColumn(
         modifier = modifier
             .padding(horizontal = 16.dp, vertical = 4.dp)
@@ -220,24 +216,10 @@ private fun FilterSection(
                 filterValues = filter.values,
                 selectedFilterValues = activeFilters.selectedFilters[filter.key].orEmpty(),
                 onFilterValueClick = { clickedFilterValue, isSelected ->
-                    // Logic to update FilterState based on chip click. This could ideally
-                    // be moved to a ViewModel or dedicated state holder for better separation.
-                    val updatedSelectedFilters = activeFilters.selectedFilters.toMutableMap()
-                    val currentSelectedValues =
-                        updatedSelectedFilters[filter.key]?.toMutableSet()
-                            ?: mutableSetOf()
-
-                    if (isSelected) {
-                        currentSelectedValues.add(clickedFilterValue)
-                    } else {
-                        currentSelectedValues.remove(clickedFilterValue)
-                    }
-                    updatedSelectedFilters[filter.key] = currentSelectedValues.toSet()
-
-                    onFilterSelected(activeFilters.copy(selectedFilters = updatedSelectedFilters.toMap()))
+                    onFilterValueToggle(filter.key, clickedFilterValue, isSelected)
                 }
             )
-            HorizontalDivider() // Separates filter categories.
+            HorizontalDivider()
         }
     }
 }
@@ -261,11 +243,8 @@ private fun FilterChipsRow(
         modifier = modifier.padding(bottom = 8.dp)
     ) {
         items(filterValues) { filterValue ->
-            // Checks if the filterValue is currently selected.
             val isSelected = selectedFilterValues.contains(filterValue)
 
-            // Renders different FilterChip types based on the FilterValue.
-            // Colors adjust based on the FilterValue type for visual distinction.
             when (filterValue) {
                 is FilterValue.ExactMatch -> {
                     FilterChip(
@@ -331,15 +310,15 @@ private fun NormalAppBarContent(
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 ),
-                textAlign = TextAlign.Center, // Centers text within its space.
-                modifier = modifier.fillMaxWidth() // Fills available width.
+                textAlign = TextAlign.Center,
+                modifier = modifier.fillMaxWidth()
             )
         },
         navigationIcon = {
             Row(
                 modifier = Modifier
                     .padding(start = 8.dp)
-                    .clickable(onClick = onMenuClick), // Makes the whole row clickable.
+                    .clickable(onClick = onMenuClick),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(Icons.Default.Menu, stringResource(R.string.menu))

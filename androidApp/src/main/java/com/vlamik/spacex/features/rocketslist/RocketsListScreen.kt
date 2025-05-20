@@ -120,12 +120,8 @@ private fun RocketsListContent(
                         )
                     )
                 },
-                onFilterSelected = { filterState ->
-                    onIntent(
-                        RocketsListContract.Intent.FilterSelected(
-                            filterState
-                        )
-                    )
+                onFilterValueToggle = { key, value, isSelected ->
+                    onIntent(RocketsListContract.Intent.FilterChipToggled(key, value, isSelected))
                 },
                 onMenuClick = {
                     onIntent(RocketsListContract.Intent.DrawerMenuClicked)

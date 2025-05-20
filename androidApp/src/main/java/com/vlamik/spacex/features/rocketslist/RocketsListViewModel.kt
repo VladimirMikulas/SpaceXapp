@@ -26,39 +26,42 @@ import javax.inject.Inject
 @HiltViewModel
 class RocketsListViewModel @Inject constructor(
     private val getRocketsListUseCase: GetRocketsListUseCase, // UseCase to get the original data
-    private val applyRocketsSearch: ApplyRocketsSearchUseCase, // Inject the new search UseCase
-    private val applyRocketsFilters: ApplyRocketsFiltersUseCase // Inject the filter UseCase
+    private val applyRocketsSearch: ApplyRocketsSearchUseCase, // UseCase to apply search logic
+    private val applyRocketsFilters: ApplyRocketsFiltersUseCase // UseCase to apply filter logic
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RocketsListContract.State())
     val uiState = _uiState.asStateFlow()
 
     private val _effect = Channel<RocketsListContract.Effect>()
-    val effect = _effect.receiveAsFlow() // Using Channel for one-time events
+    val effect = _effect.receiveAsFlow() // Using Channel for one-time events (e.g., navigation)
 
     init {
+        // Initial load of rockets when the ViewModel is created
         processIntent(RocketsListContract.Intent.LoadRockets)
     }
 
+    /**
+     * Processes incoming [RocketsListContract.Intent]s from the UI.
+     * This is the single entry point for UI events.
+     */
     fun processIntent(intent: RocketsListContract.Intent) {
-        viewModelScope.launch { // Most intents will trigger suspend functions or change state
+        viewModelScope.launch {
             when (intent) {
                 is RocketsListContract.Intent.LoadRockets -> loadRockets(refresh = false)
                 is RocketsListContract.Intent.RefreshRockets -> refreshRockets()
                 is RocketsListContract.Intent.SearchQueryChanged -> updateSearchQuery(intent.query)
-                is RocketsListContract.Intent.FilterSelected -> updateFilters(intent.newFilterState)
+                is RocketsListContract.Intent.FilterChipToggled -> handleFilterChipToggle(
+                    intent.filterKey,
+                    intent.filterValue,
+                    intent.isSelected
+                )
                 is RocketsListContract.Intent.RocketClicked -> _effect.send(
-                    RocketsListContract.Effect.OpenRocketDetails(
-                        intent.rocketId
-                    )
+                    RocketsListContract.Effect.OpenRocketDetails(intent.rocketId)
                 )
-
                 is RocketsListContract.Intent.NavigateTo -> _effect.send(
-                    RocketsListContract.Effect.NavigateToRoute(
-                        intent.route
-                    )
+                    RocketsListContract.Effect.NavigateToRoute(intent.route)
                 )
-
                 is RocketsListContract.Intent.DrawerMenuClicked -> _effect.send(RocketsListContract.Effect.OpenDrawer)
                 is RocketsListContract.Intent.RetryLoadRockets -> loadRockets(refresh = false)
                 is RocketsListContract.Intent.ConsumeError -> _uiState.update { it.copy(error = null) }
@@ -66,29 +69,33 @@ class RocketsListViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Loads rockets, handling initial load or data refresh.
+     * Updates loading states and applies current search/filters after fetching.
+     */
     private suspend fun loadRockets(refresh: Boolean) {
         _uiState.update {
             it.copy(
-                isLoading = !refresh,
-                isRefreshing = refresh,
+                isLoading = !refresh, // Only show full loading spinner for initial load
+                isRefreshing = refresh, // Show refresh indicator for pull-to-refresh
                 error = null
             )
         }
 
-        getRocketsListUseCase(refresh)
+        getRocketsListUseCase(refresh) // Calls the domain layer UseCase
             .onSuccess { rockets ->
-                val availableFilters =
-                    createAvailableFilters(rockets) // Creates presentation FilterItems
-                _uiState.update {
-                    it.copy(
+                // Create UI-specific filter items from the fetched rockets
+                val availableFilters = createAvailableFilters(rockets)
+                _uiState.update { currentState ->
+                    currentState.copy(
                         isLoading = false,
                         isRefreshing = false,
-                        rockets = rockets,
-                        // Apply search first, then filters to the search results
+                        rockets = rockets, // Store original rockets
+                        // Apply existing search query and active filters to the newly loaded data
                         filteredRockets = applySearchAndFilters(
                             rockets,
-                            it.searchQuery,
-                            it.activeFilters
+                            currentState.searchQuery,
+                            currentState.activeFilters
                         ),
                         availableFilters = availableFilters,
                         error = null
@@ -100,6 +107,7 @@ class RocketsListViewModel @Inject constructor(
                     state.copy(
                         isLoading = false,
                         isRefreshing = false,
+                        // Provide a user-friendly error message
                         error = throwable.message?.let { UiText.dynamic(it) }
                             ?: UiText.from(R.string.data_error)
                     )
@@ -107,40 +115,73 @@ class RocketsListViewModel @Inject constructor(
             }
     }
 
+    /**
+     * Triggers a refresh of rockets, also resetting search and filters.
+     */
     private suspend fun refreshRockets() {
-        // Reset search and filters on refresh
+        // Reset search and filters to initial state upon explicit refresh
         _uiState.update {
             it.copy(
                 searchQuery = "",
-                activeFilters = FilterState() // Reset presentation FilterState
+                activeFilters = FilterState()
             )
         }
         loadRockets(refresh = true)
     }
 
+    /**
+     * Updates the search query and re-applies search/filters to the rocket list.
+     */
     private fun updateSearchQuery(query: String) {
         _uiState.update { currentState ->
             currentState.copy(
                 searchQuery = query,
-                // Apply search first, then filters to the search results
+                // Re-apply search and filters with the new query
                 filteredRockets = applySearchAndFilters(
                     currentState.rockets,
                     query,
-                    currentState.activeFilters // Pass presentation FilterState
+                    currentState.activeFilters
                 )
             )
         }
     }
 
-    private fun updateFilters(newFilterState: FilterState) {
+    /**
+     * Handles the toggling of a filter chip, updating the `activeFilters` state.
+     * This is where the core filter state manipulation now happens.
+     */
+    private fun handleFilterChipToggle(
+        filterKey: String,
+        filterValue: FilterValue,
+        isSelected: Boolean
+    ) {
         _uiState.update { currentState ->
+            // Create a mutable copy of the current selected filters map
+            val updatedSelectedFilters = currentState.activeFilters.selectedFilters.toMutableMap()
+            // Get the current set of selected values for this specific filter key
+            val currentSelectedValues =
+                updatedSelectedFilters[filterKey]?.toMutableSet() ?: mutableSetOf()
+
+            // Add or remove the clicked filter value based on its new selection state
+            if (isSelected) {
+                currentSelectedValues.add(filterValue)
+            } else {
+                currentSelectedValues.remove(filterValue)
+            }
+            // Update the map with the modified set of values for this filter key
+            updatedSelectedFilters[filterKey] = currentSelectedValues.toSet()
+
+            // Create a new FilterState with the updated selected filters
+            val newActiveFilters =
+                currentState.activeFilters.copy(selectedFilters = updatedSelectedFilters.toMap())
+
+            // Update the UI state with the new active filters and re-apply search/filters
             currentState.copy(
-                activeFilters = newFilterState, // New presentation FilterState
-                // Apply search first (to original data), then filters to the search results
+                activeFilters = newActiveFilters,
                 filteredRockets = applySearchAndFilters(
                     currentState.rockets,
                     currentState.searchQuery,
-                    newFilterState
+                    newActiveFilters // Use the newly calculated active filters for processing
                 )
             )
         }
@@ -148,7 +189,8 @@ class RocketsListViewModel @Inject constructor(
 
     /**
      * Applies both search and filters using the domain UseCases.
-     * This function maps presentation FilterValue to domain DomainFilterValue before calling the filter UseCase.
+     * This function maps presentation `FilterValue`s to domain `DomainFilterValue`s
+     * before calling the filter UseCase.
      */
     private fun applySearchAndFilters(
         rockets: List<RocketListItemModel>,
@@ -157,6 +199,7 @@ class RocketsListViewModel @Inject constructor(
     ): List<RocketListItemModel> {
         val searchedRockets = applyRocketsSearch(rockets, query)
 
+        // Map presentation-layer filters to domain-layer filters for the UseCase
         val selectedDomainFilters = filters.selectedFilters.mapValues { (_, selectedFilterValues) ->
             selectedFilterValues.map { presentationFilterValue ->
                 when (presentationFilterValue) {
@@ -181,11 +224,10 @@ class RocketsListViewModel @Inject constructor(
         return applyRocketsFilters(searchedRockets, selectedDomainFilters)
     }
 
-
     /**
      * Creates the list of available filters for the UI based on the provided rockets.
-     * This function remains in the ViewModel as it creates presentation-specific FilterItem objects
-     * which include UiText.
+     * This remains in the ViewModel (or could be moved to a Mapper) as it creates
+     * presentation-specific `FilterItem` objects which include `UiText`.
      */
     private fun createAvailableFilters(rockets: List<RocketListItemModel>): List<FilterItem> {
         if (rockets.isEmpty()) return emptyList()
@@ -199,130 +241,73 @@ class RocketsListViewModel @Inject constructor(
     }
 
     /**
-     * Creates the FilterItem for the "Name" filter (presentation model).
-     * Creates presentation FilterValue.ExactMatch with UiText.
+     * Creates the `FilterItem` for the "Name" filter (presentation model).
+     * Creates presentation `FilterValue.ExactMatch` with `UiText`.
      */
     private fun createNameFilter(rockets: List<RocketListItemModel>): FilterItem {
         val names = rockets.map { it.name }.distinct().sorted()
         val filterValues = names.map { name ->
-            // Create presentation FilterValue.ExactMatch with UiText
             FilterValue.ExactMatch(displayName = UiText.dynamic(name), value = name)
         }
         return FilterItem(
             key = FilterConstants.KEY_NAME,
-            displayName = UiText.from(R.string.filter_name), // Use UiText.from for String resource
-            values = filterValues // List of presentation FilterValue
+            displayName = UiText.from(R.string.filter_name),
+            values = filterValues
         )
     }
 
     /**
-     * Creates the FilterItem for the "First Flight" filter (presentation model).
-     * Creates presentation FilterValue.YearRange with UiText based on domain range info.
+     * Creates the `FilterItem` for the "First Flight" filter (presentation model).
+     * Creates presentation `FilterValue.YearRange` with `UiText` based on domain range info.
      */
     private fun createFirstFlightFilter(rockets: List<RocketListItemModel>): FilterItem {
         val dateStrings = rockets.map { it.firstFlight }
-        // Use FilterUtils (from domain) to get raw year range information
         val yearRangeInfo = FilterUtils.generateYearRangeInfo(dateStrings)
 
-        // Create presentation FilterValue.YearRange objects with UiText for display
         val filterValues = yearRangeInfo?.let { info ->
             listOf(
-                // "Before Year X" range: displayName is UiText, endYear is the boundary
                 FilterValue.YearRange(
                     displayName = UiText.from(
                         R.string.filter_before,
                         (info.min + info.step).toString()
                     ),
-                    endYear = info.min + info.step // Data for filtering (matches domain model structure)
+                    endYear = info.min + info.step
                 ),
-                // "X - Y" range: displayName is UiText, startYear and endYear are the boundaries
                 FilterValue.YearRange(
-                    displayName = UiText.from( // Use R.string.filter_range, which should take 2 string args.
+                    displayName = UiText.from(
                         R.string.filter_range,
                         (info.min + info.step).toString(),
                         (info.max - info.step).toString()
                     ),
-                    startYear = info.min + info.step, // Data for filtering
-                    endYear = info.max - info.step // Data for filtering
+                    startYear = info.min + info.step,
+                    endYear = info.max - info.step
                 ),
-                // "After Year X" range: displayName is UiText, startYear is the boundary
                 FilterValue.YearRange(
                     displayName = UiText.from(
                         R.string.filter_after,
                         (info.max - info.step).toString()
                     ),
-                    startYear = info.max - info.step // Data for filtering
+                    startYear = info.max - info.step
                 )
             )
-        } ?: emptyList() // If no data, the filter list is empty
-
+        } ?: emptyList()
 
         return FilterItem(
             key = FilterConstants.KEY_FIRST_FLIGHT,
-            displayName = UiText.from(R.string.filter_first_flight), // Use UiText.from
-            values = filterValues, // List of presentation FilterValue
-            extraParams = mapOf(FilterConstants.PARAM_UNIT to UiText.from(R.string.unit_year)) // Use UiText.from for extra param
+            displayName = UiText.from(R.string.filter_first_flight),
+            values = filterValues,
+            extraParams = mapOf(FilterConstants.PARAM_UNIT to UiText.from(R.string.unit_year))
         )
     }
 
     /**
-     * Creates the FilterItem for the "Height" filter (presentation model).
-     * Creates presentation FilterValue.Range with UiText based on domain range info.
+     * Creates the `FilterItem` for the "Height" filter (presentation model).
+     * Creates presentation `FilterValue.Range` with `UiText` based on domain range info.
      */
     private fun createHeightFilter(rockets: List<RocketListItemModel>): FilterItem {
         val heights = rockets.map { it.height }
         val rangeInfo = FilterUtils.generateDoubleRangeInfo(heights)
 
-        // Create presentation FilterValue.Range objects with UiText for display
-        val filterValues = rangeInfo?.let { info ->
-            listOf(
-                // "Under X" range: displayName is UiText, end is the boundary
-                FilterValue.Range(
-                    displayName = UiText.from(
-                        R.string.filter_under,
-                        "%.1f".format(info.min + info.step)
-                    ), // Format the number here for display
-                    end = info.min + info.step // Data for filtering
-                ),
-                // "X - Y" range: displayName is UiText, start and end are the boundaries
-                FilterValue.Range(
-                    displayName = UiText.from( // Use R.string.filter_range
-                        R.string.filter_range,
-                        "%.1f".format(info.min + info.step),
-                        "%.1f".format(info.max - info.step)
-                    ),
-                    start = info.min + info.step, // Data for filtering
-                    end = info.max - info.step // Data for filtering
-                ),
-                // "Over X" range: displayName is UiText, start is the boundary
-                FilterValue.Range(
-                    displayName = UiText.from(
-                        R.string.filter_over,
-                        "%.1f".format(info.max - info.step)
-                    ),
-                    start = info.max - info.step // Data for filtering
-                )
-            )
-        } ?: emptyList() // If no data, the filter list is empty
-
-
-        return FilterItem(
-            key = FilterConstants.KEY_HEIGHT,
-            displayName = UiText.from(R.string.filter_height),
-            values = filterValues, // List of presentation FilterValue
-            extraParams = mapOf(FilterConstants.PARAM_UNIT to UiText.from(R.string.unit_meters)) // Use UiText.from for extra param
-        )
-    }
-
-    /**
-     * Creates the FilterItem for the "Diameter" filter (presentation model).
-     * Creates presentation FilterValue.Range with UiText based on domain range info.
-     */
-    private fun createDiameterFilter(rockets: List<RocketListItemModel>): FilterItem {
-        val diameters = rockets.map { it.diameter }
-        val rangeInfo = FilterUtils.generateDoubleRangeInfo(diameters)
-
-        // Create presentation FilterValue.Range objects with UiText for display
         val filterValues = rangeInfo?.let { info ->
             listOf(
                 FilterValue.Range(
@@ -351,6 +336,49 @@ class RocketsListViewModel @Inject constructor(
             )
         } ?: emptyList()
 
+        return FilterItem(
+            key = FilterConstants.KEY_HEIGHT,
+            displayName = UiText.from(R.string.filter_height),
+            values = filterValues,
+            extraParams = mapOf(FilterConstants.PARAM_UNIT to UiText.from(R.string.unit_meters))
+        )
+    }
+
+    /**
+     * Creates the `FilterItem` for the "Diameter" filter (presentation model).
+     * Creates presentation `FilterValue.Range` with `UiText` based on domain range info.
+     */
+    private fun createDiameterFilter(rockets: List<RocketListItemModel>): FilterItem {
+        val diameters = rockets.map { it.diameter }
+        val rangeInfo = FilterUtils.generateDoubleRangeInfo(diameters)
+
+        val filterValues = rangeInfo?.let { info ->
+            listOf(
+                FilterValue.Range(
+                    displayName = UiText.from(
+                        R.string.filter_under,
+                        "%.1f".format(info.min + info.step)
+                    ),
+                    end = info.min + info.step
+                ),
+                FilterValue.Range(
+                    displayName = UiText.from(
+                        R.string.filter_range,
+                        "%.1f".format(info.min + info.step),
+                        "%.1f".format(info.max - info.step)
+                    ),
+                    start = info.min + info.step,
+                    end = info.max - info.step
+                ),
+                FilterValue.Range(
+                    displayName = UiText.from(
+                        R.string.filter_over,
+                        "%.1f".format(info.max - info.step)
+                    ),
+                    start = info.max - info.step
+                )
+            )
+        } ?: emptyList()
 
         return FilterItem(
             key = FilterConstants.KEY_DIAMETER,
@@ -361,8 +389,8 @@ class RocketsListViewModel @Inject constructor(
     }
 
     /**
-     * Creates the FilterItem for the "Mass" filter (presentation model).
-     * Creates presentation FilterValue.Range with UiText based on domain range info.
+     * Creates the `FilterItem` for the "Mass" filter (presentation model).
+     * Creates presentation `FilterValue.Range` with `UiText` based on domain range info.
      */
     private fun createMassFilter(rockets: List<RocketListItemModel>): FilterItem {
         val masses = rockets.map { it.mass.toDouble() }
@@ -395,7 +423,6 @@ class RocketsListViewModel @Inject constructor(
                 )
             )
         } ?: emptyList()
-
 
         return FilterItem(
             key = FilterConstants.KEY_MASS,
