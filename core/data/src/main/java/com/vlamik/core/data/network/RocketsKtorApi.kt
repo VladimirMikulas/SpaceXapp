@@ -11,7 +11,7 @@ import javax.inject.Inject
 
 class RocketsKtorApi
 @Inject constructor(
-    private val httpClient: OpenLibraryHttpClient,
+    private val httpClient: KtorHttpClient,
 ) : RocketsApi {
     override suspend fun getRockets(): Result<List<RocketDto>> = runCatching {
         httpClient().get {

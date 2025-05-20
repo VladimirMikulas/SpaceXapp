@@ -11,7 +11,7 @@ import javax.inject.Inject
 
 class CrewKtorApi
 @Inject constructor(
-    private val httpClient: OpenLibraryHttpClient,
+    private val httpClient: KtorHttpClient,
 ) : CrewApi {
     override suspend fun getCrew(): Result<List<CrewDto>> = runCatching {
         httpClient().get {
