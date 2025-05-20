@@ -26,8 +26,6 @@ hilt-testing = "2.56.1"
 dagger = "2.43.2"
 kotlin = "2.1.20"
 ktor = "3.0.0"
-apollo-engine-ktor = "0.1.1"
-apollo = "4.2.0"
 jvm = "5.4.1"
 coroutines = "1.9.0"
 junit-ktx = "1.2.1"
@@ -82,8 +80,6 @@ ktor-client-logging = { group = "io.ktor", name = "ktor-client-logging-jvm", ver
 ktor-engine-android = { group = "io.ktor", name = "ktor-client-android", version.ref = "ktor" }
 ktor-engine-mock = { group = "io.ktor", name = "ktor-client-mock", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
-apollo-runtime = { group = "com.apollographql.apollo", name = "apollo-runtime", version.ref = "apollo" }
-apollo-engine-ktor = { group = "com.apollographql.ktor", name = "apollo-engine-ktor", version.ref = "apollo-engine-ktor" }
 
 # Testing
 junit = { group = "junit", name = "junit", version = "4.13.2" }
@@ -149,8 +145,6 @@ network = [
     "ktor-client-content-negotiation",
     "ktor-client-content-serialization",
     "ktor-serialization-kotlinx-json",
-    "apollo-runtime",
-    "apollo-engine-ktor",
 ]
 
 test-core = [
@@ -173,4 +167,3 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version = "11.3.1" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-apollo = { id = "com.apollographql.apollo", version.ref = "apollo" }
